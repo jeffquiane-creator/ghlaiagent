@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GoHighLevel AI Agent - Web Server
+GoHighLevel AI Agent - Web Server (V2 API)
 Flask backend that powers the web interface
 """
 
@@ -17,10 +17,10 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 CORS(app)
 
-# Configuration
+# Configuration - V2 API
 GHL_API_KEY = os.environ.get("GHL_API_KEY", "pit-08e43a3b-311c-4eca-85ed-5aa15cf9c9ed")
 GHL_LOCATION_ID = os.environ.get("GHL_LOCATION_ID", "oRAdNjgqsxfmfcoNLmAG")
-GHL_BASE_URL = "https://rest.gohighlevel.com/v1"
+GHL_BASE_URL = "https://services.leadconnectorhq.com"  # V2 API endpoint
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 # Initialize Anthropic client
@@ -31,7 +31,7 @@ else:
 
 
 class GoHighLevelAPI:
-    """Wrapper for GoHighLevel API calls"""
+    """Wrapper for GoHighLevel V2 API calls"""
     
     def __init__(self, api_key, location_id):
         self.api_key = api_key
@@ -50,7 +50,11 @@ class GoHighLevelAPI:
             "locationId": self.location_id,
             **data
         }
+        print(f"Creating contact at: {url}")
+        print(f"Payload: {payload}")
         response = requests.post(url, headers=self.headers, json=payload)
+        print(f"Response status: {response.status_code}")
+        print(f"Response: {response.text}")
         return response.json()
     
     def search_contacts(self, query):
@@ -60,15 +64,18 @@ class GoHighLevelAPI:
             "locationId": self.location_id,
             "query": query
         }
+        print(f"Searching contacts at: {url}")
+        print(f"Params: {params}")
         response = requests.get(url, headers=self.headers, params=params)
+        print(f"Response status: {response.status_code}")
+        print(f"Response: {response.text[:200]}")  # First 200 chars
         return response.json()
     
     def add_note_to_contact(self, contact_id, note):
         """Add a note to a contact"""
         url = f"{self.base_url}/contacts/{contact_id}/notes"
         payload = {
-            "body": note,
-            "userId": self.location_id
+            "body": note
         }
         response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
@@ -200,7 +207,7 @@ Return ONLY the JSON object, no other text."""
                         "message": f"✅ Created contact: {name}",
                         "data": contact
                     }
-                return {"success": False, "message": f"❌ Error creating contact"}
+                return {"success": False, "message": f"❌ Error creating contact: {result.get('message', 'Unknown error')}"}
             
             elif action == "add_note":
                 contact_name = params.get("contact_name")
@@ -262,6 +269,7 @@ Return ONLY the JSON object, no other text."""
                 return {"success": False, "message": f"❌ Action not yet implemented: {action}"}
         
         except Exception as e:
+            print(f"Execute error: {str(e)}")
             return {"success": False, "message": f"❌ Error: {str(e)}"}
 
 
@@ -321,10 +329,10 @@ def test_api():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("🚀 GoHighLevel AI Agent - Web Server")
+    print("🚀 GoHighLevel AI Agent - Web Server (V2 API)")
     print("=" * 60)
     print("\n📱 Starting server...")
-    print("💡 Make sure ANTHROPIC_API_KEY is set in your environment\n")
+    print("💡 Using GHL V2 API endpoint\n")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
