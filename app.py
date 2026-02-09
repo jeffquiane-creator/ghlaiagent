@@ -235,32 +235,31 @@ class GHLAIAgent:
                 "confirmation_message": "AI service not configured."
             }
         
-        system_prompt = """You are an AI assistant for eXcelerate CRM by Jay Kinder. This is an eXp Realty focused CRM system. Interpret user commands and return ONLY valid JSON.
+        system_prompt = """You are an AI assistant for eXcelerate CRM. Understand how people ACTUALLY talk - casual, short, sometimes incomplete sentences, typos, slang. Return ONLY valid JSON.
 
 CRITICAL: Return ONLY the JSON object. No markdown, no code blocks, no explanations.
 
+UNDERSTAND NATURAL SPEECH:
+- People say "find john" not "search for contact named john"
+- People say "move him to..." not "move opportunity to stage"
+- People say "text sarah" not "send sms to contact sarah"
+- People say "whats my pipeline look like" not "show pipeline report"
+- People use pronouns: "move her deal", "text him", "update his phone"
+- People make typos: "mke", "sarah", "comitted"
+- People are vague: "find that guy", "move it", "check status"
+
 Available actions:
-- create_contact: Create new contact
-- update_contact: Update existing contact (requires contact_name)
-- search_contact: Search for contacts
-- add_note: Add note to contact
-- add_tag: Add tag to contact
-- remove_tag: Remove tag from contact
-- create_opportunity: Create opportunity/deal for eXp Realty recruiting
-- update_opportunity: Update opportunity
-- move_opportunity: Move opportunity to pipeline stage (e.g., "Send Live Invite", "Verbally Committed", "Contract Signed")
-- get_opportunities: List opportunities
-- delete_opportunity: Delete opportunity
-- get_pipelines: Get pipeline info
-- send_sms: Send SMS message
-- send_email: Send email
-- create_appointment: Create appointment
-- create_task: Create task
-- pipeline_report: Get analytics
-- contact_stats: Get contact statistics
-- bulk_tag: Tag multiple contacts
-- bulk_sms: Send SMS to multiple contacts
-- search_by_tag: Search contacts by tag
+- search_contact: ANY search - "find john", "who is sarah", "lookup mike", "search jeff"
+- create_contact: "add john", "new contact sarah", "create mike 555-1234"
+- update_contact: "change his phone", "update sarah's email", "fix john number"
+- add_note: "note on john", "add note", "john said he's interested"
+- add_tag: "tag sarah hot", "mark as vip", "label john ready"
+- move_opportunity: "move john to [stage]", "put sarah in [stage]", "john is now [stage]"
+- create_opportunity: "new deal john", "add opportunity sarah", "create deal 50k"
+- send_sms: "text john", "sms sarah", "message mike"
+- pipeline_report: "how's my pipeline", "show stats", "numbers", "analytics"
+- get_pipelines: "show stages", "what stages", "pipeline stages"
+- contact_stats: "how many contacts", "contact count", "stats"
 
 Response format:
 {
@@ -269,56 +268,38 @@ Response format:
     "confirmation_message": "brief description"
 }
 
-Examples:
+REAL EXAMPLES - HOW PEOPLE ACTUALLY TALK:
 
-User: "Search for jeff"
-{
-    "action": "search_contact",
-    "parameters": {"query": "jeff"},
-    "confirmation_message": "Searching for jeff"
-}
+"find john"
+{"action": "search_contact", "parameters": {"query": "john"}, "confirmation_message": "Looking for john"}
 
-User: "Update Paula's phone to 555-9999"
-{
-    "action": "update_contact",
-    "parameters": {"contact_name": "Paula", "phone": "555-9999"},
-    "confirmation_message": "Updating Paula's phone number"
-}
+"johns phone is 555-9999"
+{"action": "update_contact", "parameters": {"contact_name": "john", "phone": "555-9999"}, "confirmation_message": "Updating john's phone"}
 
-User: "Move John to Send Live Invite"
-{
-    "action": "move_opportunity",
-    "parameters": {"contact_name": "John", "stage_name": "Send Live Invite"},
-    "confirmation_message": "Moving John's opportunity to Send Live Invite stage"
-}
+"move sarah to send invite" OR "sarah send invite" OR "put sarah in send invite"
+{"action": "move_opportunity", "parameters": {"contact_name": "sarah", "stage_name": "send invite"}, "confirmation_message": "Moving sarah to send invite"}
 
-User: "Move Sarah to verbally committed"
-{
-    "action": "move_opportunity",
-    "parameters": {"contact_name": "Sarah", "stage_name": "Verbally Committed"},
-    "confirmation_message": "Moving Sarah's deal to Verbally Committed"
-}
+"text mike thanks"
+{"action": "send_sms", "parameters": {"contact_name": "mike", "message": "thanks"}, "confirmation_message": "Texting mike"}
 
-User: "Create deal for John worth $50000"
-{
-    "action": "create_opportunity",
-    "parameters": {"contact_name": "John", "monetaryValue": 50000, "name": "Deal for John"},
-    "confirmation_message": "Creating $50,000 opportunity for John"
-}
+"hows my pipeline" OR "show numbers" OR "stats"
+{"action": "pipeline_report", "parameters": {}, "confirmation_message": "Getting your pipeline stats"}
 
-User: "Show pipeline report"
-{
-    "action": "pipeline_report",
-    "parameters": {},
-    "confirmation_message": "Getting pipeline analytics"
-}
+"new contact sarah 555-1234"
+{"action": "create_contact", "parameters": {"firstName": "sarah", "phone": "555-1234"}, "confirmation_message": "Creating sarah"}
 
-User: "Tag all California contacts as West Coast"
-{
-    "action": "bulk_tag",
-    "parameters": {"filter": "California", "tag": "West Coast"},
-    "confirmation_message": "Tagging California contacts"
-}
+"tag everyone in cali as west coast"
+{"action": "bulk_tag", "parameters": {"filter": "california", "tag": "west coast"}, "confirmation_message": "Tagging california contacts"}
+
+"johns committed" OR "john verbally committed" OR "move john committed"
+{"action": "move_opportunity", "parameters": {"contact_name": "john", "stage_name": "verbally committed"}, "confirmation_message": "Moving john to verbally committed"}
+
+BE FLEXIBLE:
+- If they say "move john invite", assume "send live invite" stage
+- If they say "sarah committed", assume "verbally committed" stage  
+- If they say "text john meeting at 3", extract the message
+- If they just say a name, search for it
+- If unclear, make best guess - don't refuse
 
 REMEMBER: Return ONLY JSON, nothing else. No markdown formatting."""
 
@@ -720,34 +701,29 @@ def test_api():
 
 @app.route('/api/examples', methods=['GET'])
 def get_examples():
-    """Get example commands for eXp Realty recruiting"""
+    """Get natural, conversational example commands"""
     examples = {
         "contacts": [
-            "Search for jeff",
-            "Create contact John Doe email john@example.com phone 555-1234",
-            "Update Paula's phone to 555-9999",
-            "Add note to Sarah: Follow up next week"
+            "find mike",
+            "add sarah 555-1234",
+            "johns phone is 555-9999",
+            "note on mike: interested"
         ],
-        "opportunities": [
-            "Create opportunity for John worth $50000",
-            "Move John to Send Live Invite",
-            "Move Sarah to Verbally Committed",
-            "Move Mike's deal to Contract Signed",
-            "Show all opportunities",
-            "Get pipeline report"
+        "pipeline": [
+            "sarah is committed",
+            "move john to send invite",
+            "put mike in contract signed",
+            "new deal sarah 50k"
         ],
-        "communications": [
-            "Send SMS to Mike: Meeting at 3pm today",
-            "Tag Paula as VIP Recruit"
+        "actions": [
+            "text john thanks!",
+            "tag mike hot lead",
+            "tag everyone in texas"
         ],
-        "bulk": [
-            "Tag all California contacts as West Coast",
-            "Show contacts with tag Hot Lead"
-        ],
-        "analytics": [
-            "Show pipeline report",
-            "Show contact statistics",
-            "Get pipelines"
+        "status": [
+            "hows my pipeline",
+            "show stats",
+            "what stages"
         ]
     }
     
