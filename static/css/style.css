@@ -801,7 +801,11 @@ body::before {
     .sidebar.active {
         transform: translateX(0);
     }
-    
+    @media (max-width: 768px) {
+    .menu-toggle {
+        display: flex !important;
+    }
+        
     .toggle-sidebar,
     .menu-toggle {
         display: block;
