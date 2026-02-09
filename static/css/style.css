@@ -798,6 +798,9 @@ body::before {
         z-index: 1000;
         transform: translateX(-100%);
         box-shadow: var(--shadow-xl);
+        background: var(--surface-solid);  /* Solid background on mobile, no blur */
+        backdrop-filter: none;  /* Remove blur on mobile */
+        -webkit-backdrop-filter: none;  /* Remove blur on mobile */
     }
     
     .sidebar.active {
@@ -848,6 +851,23 @@ body::before {
     .welcome-message h2 {
         font-size: 1.5rem;
     }
+    
+    /* Ensure sidebar is visible when active */
+    .sidebar.active {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    /* Make sure examples are visible */
+    .sidebar.active .examples-container {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    .sidebar.active .example-item {
+        opacity: 1 !important;
+        background: rgba(51, 65, 85, 0.8) !important;  /* More solid background */
+    }
 }
 
 @media (max-width: 480px) {
@@ -890,3 +910,26 @@ body::before {
 .feature-item:nth-child(2) .feature-icon { animation-delay: 0.5s; }
 .feature-item:nth-child(3) .feature-icon { animation-delay: 1s; }
 .feature-item:nth-child(4) .feature-icon { animation-delay: 1.5s; }
+
+/* Mobile sidebar overlay */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    display: none;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
