@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHL AI Agent - Ultimate Edition</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar with Examples -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>📚 Command Library</h3>
+                <button class="toggle-sidebar" onclick="toggleSidebar()">✕</button>
+            </div>
+            
+            <div class="examples-container" id="examplesContainer">
+                <div class="example-category">
+                    <h4>👤 Contacts</h4>
+                    <div class="example-item" onclick="useExample(this)">
+                        Create contact John Doe, email john@test.com
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Update Paula's phone to 555-9999
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Search for Mike
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Add note to John: Very interested
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Tag Sarah as VIP
+                    </div>
+                </div>
+
+                <div class="example-category">
+                    <h4>💼 Opportunities</h4>
+                    <div class="example-item" onclick="useExample(this)">
+                        Create opportunity for Paula worth $50000
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Move John's deal to Closed Won
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Show me all opportunities
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Update Paula's deal to $75000
+                    </div>
+                </div>
+
+                <div class="example-category">
+                    <h4>💬 Communications</h4>
+                    <div class="example-item" onclick="useExample(this)">
+                        Send SMS to Paula saying Thanks!
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Send email to John with subject Follow Up
+                    </div>
+                </div>
+
+                <div class="example-category">
+                    <h4>⚡ Bulk Operations</h4>
+                    <div class="example-item" onclick="useExample(this)">
+                        Tag all contacts from California as West Coast
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Send SMS to all Hot Lead contacts saying Check our offer
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Create $25000 deals for all Ready to Buy contacts
+                    </div>
+                </div>
+
+                <div class="example-category">
+                    <h4>📊 Analytics</h4>
+                    <div class="example-item" onclick="useExample(this)">
+                        Show pipeline report
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        Show contact statistics
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        List appointments this week
+                    </div>
+                </div>
+
+                <div class="example-category">
+                    <h4>🔍 Pipelines</h4>
+                    <div class="example-item" onclick="useExample(this)">
+                        Show me all pipelines
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <div class="header-content">
+                        <h1>🤖 GHL AI Agent</h1>
+                        <p class="subtitle">Ultimate Edition - Control your CRM with natural language</p>
+                    </div>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </header>
+
+            <!-- Quick Action Bar -->
+            <div class="quick-actions-bar">
+                <button class="action-btn" onclick="quickAction('contact')">
+                    <span class="action-icon">👤</span>
+                    <span>New Contact</span>
+                </button>
+                <button class="action-btn" onclick="quickAction('deal')">
+                    <span class="action-icon">💼</span>
+                    <span>New Deal</span>
+                </button>
+                <button class="action-btn" onclick="quickAction('sms')">
+                    <span class="action-icon">💬</span>
+                    <span>Send SMS</span>
+                </button>
+                <button class="action-btn" onclick="quickAction('search')">
+                    <span class="action-icon">🔍</span>
+                    <span>Search</span>
+                </button>
+                <button class="action-btn" onclick="quickAction('analytics')">
+                    <span class="action-icon">📊</span>
+                    <span>Analytics</span>
+                </button>
+            </div>
+
+            <!-- Chat Container -->
+            <div class="chat-container" id="chatContainer">
+                <!-- Welcome Message -->
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="bot-avatar">🤖</span>
+                            <span class="message-sender">AI Agent</span>
+                        </div>
+                        <div class="message-text welcome-message">
+                            <h2>👋 Welcome to GHL AI Agent - Ultimate Edition!</h2>
+                            <p>I can help you control your entire GoHighLevel CRM using natural language.</p>
+                            
+                            <div class="feature-grid">
+                                <div class="feature-item">
+                                    <span class="feature-icon">👥</span>
+                                    <div>
+                                        <strong>Contacts</strong>
+                                        <p>Create, update, search, tag contacts</p>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">💼</span>
+                                    <div>
+                                        <strong>Opportunities</strong>
+                                        <p>Manage deals & pipelines</p>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">⚡</span>
+                                    <div>
+                                        <strong>Bulk Operations</strong>
+                                        <p>Tag, SMS, email multiple contacts</p>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">📊</span>
+                                    <div>
+                                        <strong>Analytics</strong>
+                                        <p>Pipeline reports & stats</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tips-box">
+                                <h3>💡 Pro Tips:</h3>
+                                <ul>
+                                    <li>Just type naturally - I understand typos and casual language</li>
+                                    <li>Click any example on the left to try it</li>
+                                    <li>Use the quick action buttons above for common tasks</li>
+                                    <li>I can handle bulk operations - "Send SMS to all Hot Leads"</li>
+                                </ul>
+                            </div>
+
+                            <div class="get-started">
+                                <p><strong>🚀 Try these to get started:</strong></p>
+                                <div class="starter-commands">
+                                    <button class="starter-btn" onclick="sendSuggestion(this)">Show me all pipelines</button>
+                                    <button class="starter-btn" onclick="sendSuggestion(this)">Show pipeline report</button>
+                                    <button class="starter-btn" onclick="sendSuggestion(this)">Search for Paula</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="commandInput" 
+                        placeholder="Type anything... 'Update Paula's phone', 'Create deal for John', 'Show analytics'"
+                        rows="1"
+                    ></textarea>
+                    <button id="sendButton" class="send-button" onclick="sendCommand()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-hint">
+                    💡 Tip: Type naturally! I understand casual language and typos.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
