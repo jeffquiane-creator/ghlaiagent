@@ -232,6 +232,17 @@ body::before {
     letter-spacing: -0.025em;
 }
 
+.logo-container {
+    margin-bottom: 0.5rem;
+}
+
+.header-logo {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
 .subtitle {
     color: var(--text-muted);
     font-size: 0.875rem;
@@ -818,6 +829,10 @@ body::before {
     
     .header-content h1 {
         font-size: 1.5rem;
+    }
+    
+    .header-logo {
+        height: 32px;
     }
     
     .subtitle {
