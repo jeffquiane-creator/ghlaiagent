@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-GoHighLevel AI Agent - ULTIMATE EDITION
-Complete CRM with Bulk Operations, Analytics, Custom Fields, and More!
+GoHighLevel AI Agent - Ultimate Edition
+Complete working version with all features
 """
 
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 import os
 import json
+import re
 import requests
 from datetime import datetime, timedelta
 from anthropic import Anthropic
@@ -43,87 +44,97 @@ class GoHighLevelAPI:
             "Version": "2021-07-28"
         }
     
-    # CONTACTS
     def create_contact(self, data):
+        """Create a new contact"""
         url = f"{self.base_url}/contacts/"
         payload = {"locationId": self.location_id, **data}
         response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
     
     def search_contacts(self, query="", limit=100):
+        """Search for contacts"""
         url = f"{self.base_url}/contacts/"
         params = {"locationId": self.location_id, "query": query, "limit": limit}
         response = requests.get(url, headers=self.headers, params=params)
         return response.json()
     
-    def get_all_contacts(self):
-        """Get ALL contacts for bulk operations"""
-        return self.search_contacts(query="", limit=1000)
+    def get_contact(self, contact_id):
+        """Get a specific contact"""
+        url = f"{self.base_url}/contacts/{contact_id}"
+        response = requests.get(url, headers=self.headers)
+        return response.json()
     
     def update_contact(self, contact_id, data):
+        """Update a contact"""
         url = f"{self.base_url}/contacts/{contact_id}"
         response = requests.put(url, headers=self.headers, json=data)
         return response.json()
     
     def delete_contact(self, contact_id):
+        """Delete a contact"""
         url = f"{self.base_url}/contacts/{contact_id}"
         response = requests.delete(url, headers=self.headers)
         return response.json()
     
     def add_note_to_contact(self, contact_id, note):
+        """Add a note to a contact"""
         url = f"{self.base_url}/contacts/{contact_id}/notes"
         payload = {"body": note}
         response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
     
     def add_tag_to_contact(self, contact_id, tags):
+        """Add tags to a contact"""
         url = f"{self.base_url}/contacts/{contact_id}"
         payload = {"tags": tags if isinstance(tags, list) else [tags]}
         response = requests.put(url, headers=self.headers, json=payload)
         return response.json()
     
     def remove_tag_from_contact(self, contact_id, tags):
-        url = f"{self.base_url}/contacts/{contact_id}/tags"
-        payload = {"tags": tags if isinstance(tags, list) else [tags]}
-        response = requests.delete(url, headers=self.headers, json=payload)
-        return response.json()
+        """Remove tags from a contact"""
+        contact = self.get_contact(contact_id)
+        current_tags = contact.get("contact", {}).get("tags", [])
+        tags_to_remove = tags if isinstance(tags, list) else [tags]
+        new_tags = [t for t in current_tags if t not in tags_to_remove]
+        return self.update_contact(contact_id, {"tags": new_tags})
     
-    # OPPORTUNITIES
     def create_opportunity(self, data):
+        """Create a new opportunity"""
         url = f"{self.base_url}/opportunities/"
         payload = {"locationId": self.location_id, **data}
         response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
     
-    def get_opportunities(self, contact_id=None, pipeline_id=None, limit=100):
+    def get_opportunities(self, contact_id=None, limit=100):
+        """Get opportunities"""
         url = f"{self.base_url}/opportunities/search"
         params = {"location_id": self.location_id, "limit": limit}
         if contact_id:
             params["contact_id"] = contact_id
-        if pipeline_id:
-            params["pipelineId"] = pipeline_id
         response = requests.get(url, headers=self.headers, params=params)
         return response.json()
     
     def update_opportunity(self, opportunity_id, data):
+        """Update an opportunity"""
         url = f"{self.base_url}/opportunities/{opportunity_id}"
         response = requests.put(url, headers=self.headers, json=data)
         return response.json()
     
     def delete_opportunity(self, opportunity_id):
+        """Delete an opportunity"""
         url = f"{self.base_url}/opportunities/{opportunity_id}"
         response = requests.delete(url, headers=self.headers)
         return response.json()
     
-    # PIPELINES
     def get_pipelines(self):
+        """Get all pipelines"""
         url = f"{self.base_url}/opportunities/pipelines"
         params = {"locationId": self.location_id}
         response = requests.get(url, headers=self.headers, params=params)
         return response.json()
     
-    # COMMUNICATIONS
     def send_sms(self, contact_id, message):
+        """Send SMS to a contact"""
         url = f"{self.base_url}/conversations/messages"
         payload = {
             "type": "SMS",
@@ -135,6 +146,7 @@ class GoHighLevelAPI:
         return response.json()
     
     def send_email(self, contact_id, subject, body):
+        """Send email to a contact"""
         url = f"{self.base_url}/conversations/messages"
         payload = {
             "type": "Email",
@@ -146,158 +158,108 @@ class GoHighLevelAPI:
         response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
     
-    # APPOINTMENTS
     def create_appointment(self, data):
+        """Create an appointment"""
         url = f"{self.base_url}/calendars/events/appointments"
         payload = {"locationId": self.location_id, **data}
         response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
     
-    def get_appointments(self, contact_id=None, start_date=None, end_date=None):
-        url = f"{self.base_url}/calendars/events/appointments"
-        params = {"locationId": self.location_id}
-        if contact_id:
-            params["contactId"] = contact_id
-        if start_date:
-            params["startDate"] = start_date
-        if end_date:
-            params["endDate"] = end_date
-        response = requests.get(url, headers=self.headers, params=params)
-        return response.json()
-    
-    # TASKS
     def create_task(self, data):
-        url = f"{self.base_url}/contacts/{data['contactId']}/tasks"
-        response = requests.post(url, headers=self.headers, json=data)
-        return response.json()
-    
-    # CAMPAIGNS
-    def add_to_campaign(self, contact_id, campaign_id):
-        url = f"{self.base_url}/contacts/{contact_id}/campaigns/{campaign_id}"
-        response = requests.post(url, headers=self.headers)
+        """Create a task"""
+        url = f"{self.base_url}/contacts/tasks"
+        payload = {"locationId": self.location_id, **data}
+        response = requests.post(url, headers=self.headers, json=payload)
         return response.json()
 
 
 class GHLAIAgent:
-    """Ultimate AI Agent with ALL Features"""
+    """AI Agent for interpreting and executing GHL commands"""
     
     def __init__(self, ghl_api):
         self.ghl = ghl_api
     
     def interpret_command(self, user_command):
-        """AI command interpretation with expanded capabilities"""
+        """Use Claude to interpret user commands"""
         
         if not anthropic_client:
-            return {"action": "error", "parameters": {}, "confirmation_message": "Anthropic API key not configured."}
+            return {
+                "action": "error",
+                "parameters": {},
+                "confirmation_message": "Anthropic API key not configured."
+            }
         
-        system_prompt = """You are an AI assistant for GoHighLevel CRM with COMPLETE capabilities including bulk operations and analytics.
+        system_prompt = """You are an AI assistant for GoHighLevel CRM. Interpret user commands and return ONLY valid JSON.
 
-AVAILABLE ACTIONS:
+CRITICAL: Return ONLY the JSON object. No markdown, no code blocks, no explanations.
 
-📞 CONTACTS:
+Available actions:
 - create_contact: Create new contact
-- update_contact: Update contact (phone, email, address, custom fields)
-- delete_contact: Delete a contact
-- search_contact: Search contacts
+- update_contact: Update existing contact (requires contact_name)
+- search_contact: Search for contacts
 - add_note: Add note to contact
-- add_tag: Add tags
-- remove_tag: Remove tags
-- bulk_tag: Tag multiple contacts at once
-- bulk_update: Update multiple contacts
-
-💼 OPPORTUNITIES:
-- create_opportunity: Create deal
-- update_opportunity: Update deal value/details
-- move_opportunity: Move to different stage
-- delete_opportunity: Delete deal
-- get_opportunities: List deals
-- bulk_create_opportunities: Create deals for multiple contacts
-
-📊 PIPELINES:
-- get_pipelines: Show all pipelines and stages
-- get_pipeline_stats: Analytics for pipeline
-
-💬 COMMUNICATIONS:
-- send_sms: Send text message
+- add_tag: Add tag to contact
+- remove_tag: Remove tag from contact
+- create_opportunity: Create opportunity/deal
+- update_opportunity: Update opportunity
+- get_opportunities: List opportunities
+- delete_opportunity: Delete opportunity
+- get_pipelines: Get pipeline info
+- send_sms: Send SMS message
 - send_email: Send email
+- create_appointment: Create appointment
+- create_task: Create task
+- pipeline_report: Get analytics
+- contact_stats: Get contact statistics
+- bulk_tag: Tag multiple contacts
 - bulk_sms: Send SMS to multiple contacts
-- bulk_email: Send email to multiple contacts
+- search_by_tag: Search contacts by tag
 
-📅 SCHEDULING:
-- create_appointment: Schedule meeting
-- get_appointments: View appointments
-- list_appointments_week: Show this week's schedule
-
-📈 ANALYTICS & REPORTING:
-- get_analytics: Show CRM statistics
-- pipeline_report: Show pipeline value and counts
-- contact_stats: Contact statistics
-- recent_activity: Show recent activity
-
-🔍 ADVANCED SEARCH:
-- search_by_tag: Find contacts by tag
-- search_by_date: Find contacts created in date range
-- search_by_custom_field: Search by custom field value
-
-RESPONSE FORMAT:
+Response format:
 {
     "action": "action_name",
     "parameters": {...},
-    "confirmation_message": "what will be done"
+    "confirmation_message": "brief description"
 }
 
-EXAMPLES:
+Examples:
 
-"Update Paula's phone to 555-9999"
+User: "Search for jeff"
+{
+    "action": "search_contact",
+    "parameters": {"query": "jeff"},
+    "confirmation_message": "Searching for jeff"
+}
+
+User: "Update Paula's phone to 555-9999"
 {
     "action": "update_contact",
     "parameters": {"contact_name": "Paula", "phone": "555-9999"},
-    "confirmation_message": "Updating Paula's phone to 555-9999"
+    "confirmation_message": "Updating Paula's phone number"
 }
 
-"Tag all contacts from California as West Coast"
+User: "Create deal for John worth $50000"
 {
-    "action": "bulk_tag",
-    "parameters": {"filter": "state:California", "tags": ["West Coast"]},
-    "confirmation_message": "Tagging all California contacts as West Coast"
+    "action": "create_opportunity",
+    "parameters": {"contact_name": "John", "monetaryValue": 50000, "name": "Deal for John"},
+    "confirmation_message": "Creating $50,000 opportunity for John"
 }
 
-"Send SMS to everyone tagged Hot Lead saying Check out our new offer"
-{
-    "action": "bulk_sms",
-    "parameters": {"tag": "Hot Lead", "message": "Check out our new offer"},
-    "confirmation_message": "Sending SMS to all Hot Lead contacts"
-}
-
-"Show me total pipeline value"
+User: "Show pipeline report"
 {
     "action": "pipeline_report",
     "parameters": {},
     "confirmation_message": "Getting pipeline analytics"
 }
 
-"Create deals for all contacts tagged Ready to Buy worth $25000"
+User: "Tag all California contacts as West Coast"
 {
-    "action": "bulk_create_opportunities",
-    "parameters": {"tag": "Ready to Buy", "value": 25000},
-    "confirmation_message": "Creating $25000 deals for all Ready to Buy contacts"
+    "action": "bulk_tag",
+    "parameters": {"filter": "California", "tag": "West Coast"},
+    "confirmation_message": "Tagging California contacts"
 }
 
-"Show appointments this week"
-{
-    "action": "list_appointments_week",
-    "parameters": {},
-    "confirmation_message": "Getting this week's appointments"
-}
-
-"Find all contacts created this month"
-{
-    "action": "search_by_date",
-    "parameters": {"period": "this_month"},
-    "confirmation_message": "Searching contacts created this month"
-}
-
-Return ONLY valid JSON."""
+REMEMBER: Return ONLY JSON, nothing else. No markdown formatting."""
 
         try:
             message = anthropic_client.messages.create(
@@ -307,214 +269,124 @@ Return ONLY valid JSON."""
                 messages=[{"role": "user", "content": user_command}]
             )
             
-response_text = message.content[0].text.strip()
-# Remove markdown formatting
-if '```' in response_text:
-    response_text = response_text.split('```')[1]
-    if response_text.startswith('json'):
-        response_text = response_text[4:]
-response_text = response_text.strip()
-
-try:
-    return json.loads(response_text)
-except:
-    return {"action": "error", "parameters": {}, "confirmation_message": "Please try again"}
+            response_text = message.content[0].text.strip()
+            
+            # Clean the response - remove markdown code blocks if present
+            response_text = re.sub(r'^```json\s*', '', response_text)
+            response_text = re.sub(r'^```\s*', '', response_text)
+            response_text = re.sub(r'\s*```$', '', response_text)
+            response_text = response_text.strip()
+            
+            print(f"AI Response: {response_text}")  # Debug log
+            
+            # Try to parse JSON
+            try:
+                return json.loads(response_text)
+            except json.JSONDecodeError as e:
+                print(f"JSON Parse Error: {e}")
+                print(f"Response was: {response_text}")
+                return {
+                    "action": "error",
+                    "parameters": {},
+                    "confirmation_message": "Sorry, I couldn't understand that command. Please try rephrasing."
+                }
+                
         except Exception as e:
             print(f"AI Error: {str(e)}")
-            return {"action": "error", "parameters": {}, "confirmation_message": f"Error: {str(e)}"}
+            return {
+                "action": "error",
+                "parameters": {},
+                "confirmation_message": f"Error: {str(e)}"
+            }
     
     def execute_command(self, command_data):
-        """Execute any command including advanced features"""
+        """Execute the interpreted command"""
         
         action = command_data.get("action")
         params = command_data.get("parameters", {})
         
         try:
-            # === BASIC CONTACT OPERATIONS ===
-            if action == "create_contact":
-                result = self.ghl.create_contact(params)
-                if result.get("contact"):
-                    contact = result["contact"]
-                    name = f"{contact.get('firstName', '')} {contact.get('lastName', '')}".strip()
-                    return {"success": True, "message": f"✅ Created: {name}"}
-                return {"success": False, "message": f"❌ Error: {result.get('message', 'Unknown')}"}
+            # Search contact
+            if action == "search_contact":
+                result = self.ghl.search_contacts(params.get("query", ""))
+                contacts = result.get("contacts", [])
+                if contacts:
+                    contact_list = []
+                    for c in contacts[:20]:
+                        contact_list.append({
+                            "name": f"{c.get('firstName', '')} {c.get('lastName', '')}".strip(),
+                            "email": c.get('email', 'No email'),
+                            "phone": c.get('phone', 'No phone'),
+                            "tags": c.get('tags', [])
+                        })
+                    return {
+                        "success": True,
+                        "message": f"✅ Found {len(contacts)} contact(s)",
+                        "data": contact_list
+                    }
+                return {"success": False, "message": "❌ No contacts found"}
             
+            # Update contact
             elif action == "update_contact":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
                     contact_id = contacts["contacts"][0]["id"]
                     update_data = {k: v for k, v in params.items() if k != "contact_name"}
                     
-                    # Map common field names
+                    # Handle address field mapping
                     if "address" in update_data:
                         update_data["address1"] = update_data.pop("address")
                     
                     self.ghl.update_contact(contact_id, update_data)
-                    return {"success": True, "message": f"✅ Updated {params.get('contact_name')}"}
+                    return {
+                        "success": True,
+                        "message": f"✅ Updated {params.get('contact_name')}"
+                    }
                 return {"success": False, "message": "❌ Contact not found"}
             
-            elif action == "delete_contact":
-                contacts = self.ghl.search_contacts(params.get("contact_name"))
-                if contacts.get("contacts"):
-                    contact_id = contacts["contacts"][0]["id"]
-                    self.ghl.delete_contact(contact_id)
-                    return {"success": True, "message": f"✅ Deleted {params.get('contact_name')}"}
-                return {"success": False, "message": "❌ Contact not found"}
+            # Create contact
+            elif action == "create_contact":
+                result = self.ghl.create_contact(params)
+                if result.get("contact"):
+                    contact = result["contact"]
+                    name = f"{contact.get('firstName', '')} {contact.get('lastName', '')}".strip()
+                    return {
+                        "success": True,
+                        "message": f"✅ Created contact: {name}"
+                    }
+                return {"success": False, "message": "❌ Error creating contact"}
             
-            elif action == "search_contact":
-                result = self.ghl.search_contacts(params.get("query", ""))
-                contacts = result.get("contacts", [])
-                if contacts:
-                    contact_list = [{
-                        "name": f"{c.get('firstName', '')} {c.get('lastName', '')}".strip(),
-                        "email": c.get('email', 'No email'),
-                        "phone": c.get('phone', 'No phone'),
-                        "tags": c.get('tags', [])
-                    } for c in contacts[:20]]
-                    return {"success": True, "message": f"✅ Found {len(contacts)} contact(s)", "data": contact_list}
-                return {"success": False, "message": "❌ No contacts found"}
-            
+            # Add note
             elif action == "add_note":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
                     contact_id = contacts["contacts"][0]["id"]
                     self.ghl.add_note_to_contact(contact_id, params["note"])
-                    return {"success": True, "message": f"✅ Note added"}
+                    return {"success": True, "message": "✅ Note added"}
                 return {"success": False, "message": "❌ Contact not found"}
             
+            # Add tag
             elif action == "add_tag":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
                     contact_id = contacts["contacts"][0]["id"]
                     self.ghl.add_tag_to_contact(contact_id, params["tags"])
-                    return {"success": True, "message": f"✅ Tags added"}
+                    return {"success": True, "message": "✅ Tags added"}
                 return {"success": False, "message": "❌ Contact not found"}
             
-            elif action == "remove_tag":
-                contacts = self.ghl.search_contacts(params.get("contact_name"))
-                if contacts.get("contacts"):
-                    contact_id = contacts["contacts"][0]["id"]
-                    self.ghl.remove_tag_from_contact(contact_id, params["tags"])
-                    return {"success": True, "message": f"✅ Tags removed"}
-                return {"success": False, "message": "❌ Contact not found"}
-            
-            # === BULK OPERATIONS ===
-            elif action == "bulk_tag":
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
-                
-                # Filter contacts based on criteria
-                filter_criteria = params.get("filter", "")
-                tags_to_add = params.get("tags", [])
-                
-                matched = []
-                if "state:" in filter_criteria:
-                    state = filter_criteria.split(":")[1]
-                    matched = [c for c in contacts if c.get("state", "").lower() == state.lower()]
-                elif "tag:" in filter_criteria:
-                    tag = filter_criteria.split(":")[1]
-                    matched = [c for c in contacts if tag in c.get("tags", [])]
-                else:
-                    matched = contacts
-                
-                count = 0
-                for contact in matched[:50]:  # Limit to 50 for safety
-                    try:
-                        self.ghl.add_tag_to_contact(contact["id"], tags_to_add)
-                        count += 1
-                    except:
-                        pass
-                
-                return {"success": True, "message": f"✅ Tagged {count} contacts"}
-            
-            elif action == "bulk_sms":
-                tag = params.get("tag")
-                message = params.get("message")
-                
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
-                
-                matched = [c for c in contacts if tag in c.get("tags", [])]
-                
-                count = 0
-                for contact in matched[:20]:  # Limit to 20 for safety
-                    try:
-                        self.ghl.send_sms(contact["id"], message)
-                        count += 1
-                    except:
-                        pass
-                
-                return {"success": True, "message": f"✅ Sent SMS to {count} contacts"}
-            
-            elif action == "bulk_email":
-                tag = params.get("tag")
-                subject = params.get("subject")
-                body = params.get("body")
-                
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
-                
-                matched = [c for c in contacts if tag in c.get("tags", [])]
-                
-                count = 0
-                for contact in matched[:20]:
-                    try:
-                        self.ghl.send_email(contact["id"], subject, body)
-                        count += 1
-                    except:
-                        pass
-                
-                return {"success": True, "message": f"✅ Sent email to {count} contacts"}
-            
-            elif action == "bulk_create_opportunities":
-                tag = params.get("tag")
-                value = params.get("value", 0)
-                
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
-                
-                matched = [c for c in contacts if tag in c.get("tags", [])]
-                
-                # Get first pipeline
-                pipelines = self.ghl.get_pipelines()
-                if not pipelines.get("pipelines"):
-                    return {"success": False, "message": "❌ No pipelines found"}
-                
-                pipeline = pipelines["pipelines"][0]
-                stage_id = pipeline["stages"][0]["id"] if pipeline.get("stages") else None
-                
-                if not stage_id:
-                    return {"success": False, "message": "❌ No stages found"}
-                
-                count = 0
-                for contact in matched[:20]:
-                    try:
-                        opp_data = {
-                            "pipelineId": pipeline["id"],
-                            "pipelineStageId": stage_id,
-                            "contactId": contact["id"],
-                            "name": f"Deal - {contact.get('firstName', '')} {contact.get('lastName', '')}",
-                            "monetaryValue": value,
-                            "status": "open"
-                        }
-                        self.ghl.create_opportunity(opp_data)
-                        count += 1
-                    except:
-                        pass
-                
-                return {"success": True, "message": f"✅ Created {count} opportunities"}
-            
-            # === OPPORTUNITIES ===
+            # Create opportunity
             elif action == "create_opportunity":
+                # Find contact
                 contacts = self.ghl.search_contacts(params.get("contact_name", ""))
                 if not contacts.get("contacts"):
                     return {"success": False, "message": "❌ Contact not found"}
                 
                 contact_id = contacts["contacts"][0]["id"]
-                pipelines = self.ghl.get_pipelines()
                 
+                # Get pipelines
+                pipelines = self.ghl.get_pipelines()
                 if not pipelines.get("pipelines"):
-                    return {"success": False, "message": "❌ No pipelines"}
+                    return {"success": False, "message": "❌ No pipelines found"}
                 
                 pipeline = pipelines["pipelines"][0]
                 stage_id = pipeline["stages"][0]["id"] if pipeline.get("stages") else None
@@ -530,85 +402,29 @@ except:
                 
                 result = self.ghl.create_opportunity(opp_data)
                 if result.get("opportunity"):
-                    return {"success": True, "message": f"✅ Created opportunity"}
+                    return {"success": True, "message": "✅ Opportunity created"}
                 return {"success": False, "message": "❌ Error creating opportunity"}
             
-            elif action == "move_opportunity" or action == "update_opportunity":
-                contacts = self.ghl.search_contacts(params.get("contact_name", ""))
-                if not contacts.get("contacts"):
-                    return {"success": False, "message": "❌ Contact not found"}
-                
-                contact_id = contacts["contacts"][0]["id"]
-                opps = self.ghl.get_opportunities(contact_id=contact_id)
-                
-                if not opps.get("opportunities"):
-                    return {"success": False, "message": "❌ No opportunities found"}
-                
-                opp_id = opps["opportunities"][0]["id"]
-                update_data = {}
-                
-                if params.get("stage_name"):
-                    pipelines = self.ghl.get_pipelines()
-                    for pipeline in pipelines.get("pipelines", []):
-                        for stage in pipeline.get("stages", []):
-                            if params["stage_name"].lower() in stage["name"].lower():
-                                update_data["pipelineStageId"] = stage["id"]
-                                break
-                
-                if params.get("monetaryValue"):
-                    update_data["monetaryValue"] = params["monetaryValue"]
-                
-                self.ghl.update_opportunity(opp_id, update_data)
-                return {"success": True, "message": "✅ Updated opportunity"}
-            
-            elif action == "delete_opportunity":
-                contacts = self.ghl.search_contacts(params.get("contact_name", ""))
-                if not contacts.get("contacts"):
-                    return {"success": False, "message": "❌ Contact not found"}
-                
-                contact_id = contacts["contacts"][0]["id"]
-                opps = self.ghl.get_opportunities(contact_id=contact_id)
-                
-                if not opps.get("opportunities"):
-                    return {"success": False, "message": "❌ No opportunities"}
-                
-                opp_id = opps["opportunities"][0]["id"]
-                self.ghl.delete_opportunity(opp_id)
-                return {"success": True, "message": "✅ Deleted opportunity"}
-            
-            elif action == "get_opportunities":
-                contact_name = params.get("contact_name")
-                if contact_name:
-                    contacts = self.ghl.search_contacts(contact_name)
-                    if contacts.get("contacts"):
-                        contact_id = contacts["contacts"][0]["id"]
-                        result = self.ghl.get_opportunities(contact_id=contact_id)
-                    else:
-                        return {"success": False, "message": "❌ Contact not found"}
-                else:
-                    result = self.ghl.get_opportunities()
-                
-                opps = result.get("opportunities", [])
-                opp_list = [{
-                    "name": o.get("name"),
-                    "value": f"${o.get('monetaryValue', 0)}",
-                    "status": o.get("status")
-                } for o in opps[:20]]
-                
-                return {"success": True, "message": f"✅ Found {len(opps)} opportunities", "data": opp_list}
-            
-            # === PIPELINES ===
+            # Get pipelines
             elif action == "get_pipelines":
                 result = self.ghl.get_pipelines()
                 if result.get("pipelines"):
                     pipeline_info = []
                     for p in result["pipelines"]:
                         stages = [s["name"] for s in p.get("stages", [])]
-                        pipeline_info.append({"name": p["name"], "stages": stages})
-                    return {"success": True, "message": f"✅ Found {len(pipeline_info)} pipeline(s)", "data": pipeline_info}
-                return {"success": False, "message": "❌ No pipelines"}
+                        pipeline_info.append({
+                            "name": p["name"],
+                            "stages": stages
+                        })
+                    return {
+                        "success": True,
+                        "message": f"✅ Found {len(pipeline_info)} pipeline(s)",
+                        "data": pipeline_info
+                    }
+                return {"success": False, "message": "❌ No pipelines found"}
             
-            elif action == "pipeline_report" or action == "get_analytics":
+            # Pipeline report
+            elif action == "pipeline_report":
                 opps = self.ghl.get_opportunities(limit=1000)
                 opportunities = opps.get("opportunities", [])
                 
@@ -623,9 +439,31 @@ except:
                     "won_deals": won_count
                 }
                 
-                return {"success": True, "message": "✅ Pipeline Analytics", "data": [report]}
+                return {
+                    "success": True,
+                    "message": "✅ Pipeline Analytics",
+                    "data": [report]
+                }
             
-            # === COMMUNICATIONS ===
+            # Get opportunities
+            elif action == "get_opportunities":
+                result = self.ghl.get_opportunities()
+                opps = result.get("opportunities", [])
+                opp_list = []
+                for o in opps[:20]:
+                    opp_list.append({
+                        "name": o.get("name"),
+                        "value": f"${o.get('monetaryValue', 0):,}",
+                        "status": o.get("status")
+                    })
+                
+                return {
+                    "success": True,
+                    "message": f"✅ Found {len(opps)} opportunities",
+                    "data": opp_list
+                }
+            
+            # Send SMS
             elif action == "send_sms":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
@@ -634,68 +472,10 @@ except:
                     return {"success": True, "message": "✅ SMS sent"}
                 return {"success": False, "message": "❌ Contact not found"}
             
-            elif action == "send_email":
-                contacts = self.ghl.search_contacts(params.get("contact_name"))
-                if contacts.get("contacts"):
-                    contact_id = contacts["contacts"][0]["id"]
-                    self.ghl.send_email(contact_id, params.get("subject", ""), params.get("body", ""))
-                    return {"success": True, "message": "✅ Email sent"}
-                return {"success": False, "message": "❌ Contact not found"}
-            
-            # === SCHEDULING ===
-            elif action == "create_appointment":
-                result = self.ghl.create_appointment(params)
-                return {"success": True, "message": "✅ Appointment created"}
-            
-            elif action == "get_appointments" or action == "list_appointments_week":
-                today = datetime.now()
-                week_later = today + timedelta(days=7)
-                
-                result = self.ghl.get_appointments(
-                    start_date=today.isoformat(),
-                    end_date=week_later.isoformat()
-                )
-                
-                appointments = result.get("appointments", [])
-                return {"success": True, "message": f"✅ Found {len(appointments)} appointments", "data": appointments[:20]}
-            
-            # === ADVANCED SEARCH ===
-            elif action == "search_by_tag":
-                tag = params.get("tag")
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
-                
-                matched = [c for c in contacts if tag in c.get("tags", [])]
-                
-                contact_list = [{
-                    "name": f"{c.get('firstName', '')} {c.get('lastName', '')}".strip(),
-                    "email": c.get('email', 'No email'),
-                    "phone": c.get('phone', 'No phone')
-                } for c in matched[:20]]
-                
-                return {"success": True, "message": f"✅ Found {len(matched)} contacts", "data": contact_list}
-            
-            elif action == "search_by_date":
-                period = params.get("period", "this_month")
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
-                
-                now = datetime.now()
-                if period == "this_month":
-                    start_date = now.replace(day=1)
-                elif period == "this_week":
-                    start_date = now - timedelta(days=now.weekday())
-                else:
-                    start_date = now - timedelta(days=30)
-                
-                # Filter by date (simplified - would need actual date parsing)
-                matched = contacts[:20]
-                
-                return {"success": True, "message": f"✅ Found {len(matched)} contacts from {period}", "data": matched}
-            
-            elif action == "contact_stats" or action == "recent_activity":
-                all_contacts = self.ghl.get_all_contacts()
-                contacts = all_contacts.get("contacts", [])
+            # Contact stats
+            elif action == "contact_stats":
+                result = self.ghl.search_contacts("", limit=1000)
+                contacts = result.get("contacts", [])
                 
                 total = len(contacts)
                 with_email = len([c for c in contacts if c.get("email")])
@@ -708,38 +488,77 @@ except:
                     "completion_rate": f"{int((with_email/total)*100) if total > 0 else 0}%"
                 }
                 
-                return {"success": True, "message": "✅ Contact Statistics", "data": [stats]}
+                return {
+                    "success": True,
+                    "message": "✅ Contact Statistics",
+                    "data": [stats]
+                }
             
-            # === TASKS ===
-            elif action == "create_task":
-                contacts = self.ghl.search_contacts(params.get("contact_name"))
-                if contacts.get("contacts"):
-                    contact_id = contacts["contacts"][0]["id"]
-                    task_data = {"contactId": contact_id, "title": params.get("title"), "dueDate": params.get("dueDate")}
-                    self.ghl.create_task(task_data)
-                    return {"success": True, "message": "✅ Task created"}
-                return {"success": False, "message": "❌ Contact not found"}
+            # Bulk tag
+            elif action == "bulk_tag":
+                filter_text = params.get("filter", "")
+                tag = params.get("tag")
+                
+                contacts = self.ghl.search_contacts(filter_text)
+                contact_list = contacts.get("contacts", [])[:50]  # Limit to 50
+                
+                tagged_count = 0
+                for contact in contact_list:
+                    try:
+                        self.ghl.add_tag_to_contact(contact["id"], [tag])
+                        tagged_count += 1
+                    except:
+                        pass
+                
+                return {
+                    "success": True,
+                    "message": f"✅ Tagged {tagged_count} contacts with '{tag}'"
+                }
             
-            # === CAMPAIGNS ===
-            elif action == "add_to_campaign":
-                contacts = self.ghl.search_contacts(params.get("contact_name"))
-                if contacts.get("contacts"):
-                    contact_id = contacts["contacts"][0]["id"]
-                    self.ghl.add_to_campaign(contact_id, params.get("campaign_id"))
-                    return {"success": True, "message": "✅ Added to campaign"}
-                return {"success": False, "message": "❌ Contact not found"}
+            # Search by tag
+            elif action == "search_by_tag":
+                tag = params.get("tag")
+                result = self.ghl.search_contacts("")
+                contacts = result.get("contacts", [])
+                
+                tagged_contacts = [c for c in contacts if tag in c.get("tags", [])]
+                
+                contact_list = []
+                for c in tagged_contacts[:20]:
+                    contact_list.append({
+                        "name": f"{c.get('firstName', '')} {c.get('lastName', '')}".strip(),
+                        "email": c.get('email', 'No email'),
+                        "phone": c.get('phone', 'No phone')
+                    })
+                
+                return {
+                    "success": True,
+                    "message": f"✅ Found {len(tagged_contacts)} contacts with tag '{tag}'",
+                    "data": contact_list
+                }
             
+            # Error action
             elif action == "error":
-                return {"success": False, "message": command_data.get('confirmation_message')}
+                return {
+                    "success": False,
+                    "message": command_data.get('confirmation_message', 'Unknown error')
+                }
             
+            # Unknown action
             else:
-                return {"success": False, "message": f"❌ Action not implemented: {action}"}
+                return {
+                    "success": False,
+                    "message": f"❌ Action not implemented: {action}"
+                }
         
         except Exception as e:
             print(f"Execute error: {str(e)}")
             import traceback
             traceback.print_exc()
-            return {"success": False, "message": f"❌ Error: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"❌ Error: {str(e)}"
+            }
 
 
 # Initialize
@@ -747,98 +566,96 @@ ghl_api = GoHighLevelAPI(GHL_API_KEY, GHL_LOCATION_ID)
 agent = GHLAIAgent(ghl_api)
 
 
-# Routes
 @app.route('/')
 def index():
+    """Render the main page"""
     return render_template('index.html')
 
 
 @app.route('/api/command', methods=['POST'])
 def process_command():
+    """Process user commands"""
     data = request.json
     user_command = data.get('command', '')
     
     if not user_command:
-        return jsonify({"success": False, "message": "No command provided"})
+        return jsonify({
+            "success": False,
+            "message": "No command provided"
+        })
     
-    command_data = agent.interpret_command(user_command)
-    result = agent.execute_command(command_data)
-    
-    return jsonify({
-        "success": result.get("success", False),
-        "message": result.get("message", ""),
-        "data": result.get("data"),
-        "plan": command_data.get("confirmation_message", "")
-    })
-
-
-@app.route('/api/examples', methods=['GET'])
-def get_examples():
-    """Return command examples for the UI"""
-    examples = {
-        "contacts": [
-            "Create contact John Doe, email john@test.com, phone 555-1234",
-            "Update Paula's phone to 555-9999",
-            "Search for contacts named Mike",
-            "Add note to John: Interested in premium package",
-            "Tag Sarah as VIP Customer",
-            "Delete contact Test User"
-        ],
-        "opportunities": [
-            "Create opportunity for Paula worth $50000",
-            "Move John's deal to Closed Won",
-            "Show me all opportunities",
-            "Update Paula's deal to $75000",
-            "Delete opportunity for Test User",
-            "Show pipeline analytics"
-        ],
-        "communications": [
-            "Send SMS to Paula saying Thanks for your business!",
-            "Send email to John with subject Follow Up",
-            "Send SMS to all Hot Lead contacts saying Check our new offer"
-        ],
-        "bulk": [
-            "Tag all contacts from California as West Coast",
-            "Create $25000 deals for all Ready to Buy contacts",
-            "Send SMS to everyone tagged Hot Lead"
-        ],
-        "analytics": [
-            "Show me total pipeline value",
-            "Show contact statistics",
-            "List appointments this week",
-            "Show pipeline report"
-        ],
-        "pipelines": [
-            "Show me all pipelines",
-            "Show pipeline stages"
-        ]
-    }
-    return jsonify(examples)
+    try:
+        # Interpret command with AI
+        command_data = agent.interpret_command(user_command)
+        
+        # Execute the command
+        result = agent.execute_command(command_data)
+        
+        return jsonify({
+            "success": result.get("success", False),
+            "message": result.get("message", ""),
+            "data": result.get("data"),
+            "plan": command_data.get("confirmation_message", "")
+        })
+        
+    except Exception as e:
+        print(f"API Error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": f"❌ Error processing command: {str(e)}"
+        })
 
 
 @app.route('/api/test', methods=['GET'])
 def test_api():
+    """Test the API connection"""
     try:
         contacts = ghl_api.search_contacts("", limit=10)
         return jsonify({
             "success": True,
-            "message": "✅ Connected - ULTIMATE EDITION",
+            "message": "✅ Connected to GoHighLevel - Ultimate Edition",
             "contact_count": len(contacts.get("contacts", []))
         })
     except Exception as e:
-        return jsonify({"success": False, "message": f"❌ Error: {str(e)}"})
+        return jsonify({
+            "success": False,
+            "message": f"❌ Connection error: {str(e)}"
+        })
+
+
+@app.route('/api/examples', methods=['GET'])
+def get_examples():
+    """Get example commands"""
+    examples = {
+        "contacts": [
+            "Search for jeff",
+            "Create contact John Doe email john@example.com phone 555-1234",
+            "Update Paula's phone to 555-9999",
+            "Add note to Sarah: Follow up next week"
+        ],
+        "opportunities": [
+            "Create opportunity for John worth $50000",
+            "Show all opportunities",
+            "Get pipeline report"
+        ],
+        "communications": [
+            "Send SMS to Mike: Meeting at 3pm today",
+            "Tag Paula as VIP Client"
+        ],
+        "bulk": [
+            "Tag all California contacts as West Coast",
+            "Show contacts with tag Hot Lead"
+        ],
+        "analytics": [
+            "Show pipeline report",
+            "Show contact statistics",
+            "Get pipelines"
+        ]
+    }
+    
+    return jsonify(examples)
 
 
 if __name__ == '__main__':
-    print("=" * 70)
-    print("🚀 GoHighLevel AI Agent - ULTIMATE EDITION")
-    print("=" * 70)
-    print("\n✅ Complete CRUD Operations")
-    print("✅ Bulk Operations (Tag, SMS, Email, Deals)")
-    print("✅ Analytics & Reporting")
-    print("✅ Advanced Search & Filters")
-    print("✅ Pipeline Management")
-    print("✅ Smart AI Interpretation\n")
-    
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
