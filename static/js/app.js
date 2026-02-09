@@ -1,13 +1,11 @@
-// GoHighLevel AI Agent - Enhanced JavaScript with Premium Interactions
+// eXcelerate CRM - Enhanced JavaScript with Perfect Mobile Sidebar
 
 let isProcessing = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Test API connection
     testConnection();
     
-    // Setup enter key to send
     const input = document.getElementById('commandInput');
     input.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -16,10 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Auto-resize textarea
     input.addEventListener('input', autoResize);
     
-    // Add focus glow effect
     input.addEventListener('focus', function() {
         document.querySelector('.input-wrapper').style.transform = 'scale(1.01)';
     });
@@ -27,28 +23,18 @@ document.addEventListener('DOMContentLoaded', function() {
     input.addEventListener('blur', function() {
         document.querySelector('.input-wrapper').style.transform = 'scale(1)';
     });
-    
-    // Add typing indicator
-    let typingTimeout;
-    input.addEventListener('input', function() {
-        clearTimeout(typingTimeout);
-        // Could add "AI is thinking..." indicator here
-    });
 });
 
-// Auto-resize textarea as user types
 function autoResize() {
     const input = document.getElementById('commandInput');
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
 }
 
-// Test the API connection with enhanced feedback
 async function testConnection() {
     const statusIndicator = document.getElementById('statusIndicator');
     const statusText = statusIndicator.querySelector('.status-text');
     
-    // Add connecting animation
     statusText.textContent = 'Connecting...';
     
     try {
@@ -58,8 +44,6 @@ async function testConnection() {
         if (data.success) {
             statusIndicator.classList.add('connected');
             statusText.textContent = 'Connected';
-            
-            // Success animation
             statusIndicator.style.animation = 'successPulse 0.5s ease-out';
             setTimeout(() => {
                 statusIndicator.style.animation = '';
@@ -75,24 +59,20 @@ async function testConnection() {
     }
 }
 
-// Enhanced send command with better UX
 async function sendCommand() {
     const input = document.getElementById('commandInput');
     const command = input.value.trim();
     
     if (!command || isProcessing) return;
     
-    // Add send button animation
     const sendBtn = document.getElementById('sendButton');
     sendBtn.style.transform = 'scale(0.9) rotate(360deg)';
     setTimeout(() => {
         sendBtn.style.transform = '';
     }, 300);
     
-    // Add user message to chat with animation
     addMessage(command, 'user');
     
-    // Clear input with animation
     input.style.opacity = '0.5';
     setTimeout(() => {
         input.value = '';
@@ -100,10 +80,8 @@ async function sendCommand() {
         input.style.opacity = '1';
     }, 150);
     
-    // Show enhanced loading
     const loadingId = addLoadingMessage();
     
-    // Disable send button
     isProcessing = true;
     updateSendButton(true);
     
@@ -118,13 +96,9 @@ async function sendCommand() {
         
         const data = await response.json();
         
-        // Remove loading message
         removeLoadingMessage(loadingId);
-        
-        // Add bot response with enhanced display
         addBotResponse(data);
         
-        // Success sound effect (subtle)
         if (data.success) {
             playSuccessSound();
         }
@@ -140,7 +114,6 @@ async function sendCommand() {
     }
 }
 
-// Add a message to the chat with enhanced animation
 function addMessage(text, sender) {
     const chatContainer = document.getElementById('chatContainer');
     
@@ -150,7 +123,7 @@ function addMessage(text, sender) {
     messageDiv.style.transform = 'translateY(20px)';
     
     const avatar = sender === 'bot' ? '🤖' : '👤';
-    const senderName = sender === 'bot' ? 'AI Agent' : 'You';
+    const senderName = sender === 'bot' ? 'eXcelerate AI' : 'You';
     
     messageDiv.innerHTML = `
         <div class="message-content">
@@ -166,7 +139,6 @@ function addMessage(text, sender) {
     
     chatContainer.appendChild(messageDiv);
     
-    // Trigger animation
     setTimeout(() => {
         messageDiv.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
         messageDiv.style.opacity = '1';
@@ -176,7 +148,6 @@ function addMessage(text, sender) {
     scrollToBottom();
 }
 
-// Enhanced bot response with better data display
 function addBotResponse(data) {
     const chatContainer = document.getElementById('chatContainer');
     
@@ -187,17 +158,14 @@ function addBotResponse(data) {
     
     let messageContent = '';
     
-    // Add plan/confirmation if available with icon
     if (data.plan) {
         const planIcon = data.success ? '📋' : '⚠️';
         messageContent += `<div class="plan-text ${data.success ? 'success-message' : 'error-message'}">${planIcon} ${escapeHtml(data.plan)}</div>`;
     }
     
-    // Add main message with appropriate icon
     const messageIcon = data.success ? '✅' : '❌';
     messageContent += `<p><strong>${messageIcon}</strong> ${escapeHtml(data.message)}</p>`;
     
-    // Add structured data with enhanced display
     if (data.data && Array.isArray(data.data)) {
         messageContent += '<div class="data-card">';
         data.data.forEach((item, index) => {
@@ -214,7 +182,7 @@ function addBotResponse(data) {
         <div class="message-content">
             <div class="message-header">
                 <span class="bot-avatar">🤖</span>
-                <span class="message-sender">AI Agent</span>
+                <span class="message-sender">eXcelerate AI</span>
             </div>
             <div class="message-text">
                 ${messageContent}
@@ -224,7 +192,6 @@ function addBotResponse(data) {
     
     chatContainer.appendChild(messageDiv);
     
-    // Trigger animation
     setTimeout(() => {
         messageDiv.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
         messageDiv.style.opacity = '1';
@@ -234,9 +201,7 @@ function addBotResponse(data) {
     scrollToBottom();
 }
 
-// Render data item with appropriate formatting
 function renderDataItem(item, index) {
-    // Check if it's contact data
     if (item.name || item.email || item.phone) {
         return `
             <div class="data-label">Contact ${index + 1}</div>
@@ -251,7 +216,6 @@ function renderDataItem(item, index) {
         `;
     }
     
-    // Check if it's analytics/stats data
     if (item.total_deals || item.total_contacts || item.total_value) {
         return `
             ${item.total_value ? `<div class="data-value"><strong>Total Value:</strong> ${escapeHtml(item.total_value)}</div>` : ''}
@@ -264,7 +228,6 @@ function renderDataItem(item, index) {
         `;
     }
     
-    // Check if it's pipeline data
     if (item.stages) {
         return `
             <div class="data-label">${escapeHtml(item.name || 'Pipeline')}</div>
@@ -274,13 +237,11 @@ function renderDataItem(item, index) {
         `;
     }
     
-    // Generic object display
     return Object.entries(item).map(([key, value]) => 
         `<div class="data-value"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}</div>`
     ).join('');
 }
 
-// Enhanced loading indicator
 function addLoadingMessage() {
     const chatContainer = document.getElementById('chatContainer');
     
@@ -292,7 +253,7 @@ function addLoadingMessage() {
         <div class="message-content">
             <div class="message-header">
                 <span class="bot-avatar">🤖</span>
-                <span class="message-sender">AI Agent</span>
+                <span class="message-sender">eXcelerate AI</span>
             </div>
             <div class="message-text">
                 <div class="loading">
@@ -310,7 +271,6 @@ function addLoadingMessage() {
     return loadingDiv.id;
 }
 
-// Remove loading indicator
 function removeLoadingMessage(id) {
     const loading = document.getElementById(id);
     if (loading) {
@@ -320,7 +280,6 @@ function removeLoadingMessage(id) {
     }
 }
 
-// Update send button state
 function updateSendButton(disabled) {
     const sendButton = document.getElementById('sendButton');
     sendButton.disabled = disabled;
@@ -331,11 +290,9 @@ function updateSendButton(disabled) {
     }
 }
 
-// Send a suggestion with animation
 function sendSuggestion(button) {
     const input = document.getElementById('commandInput');
     
-    // Button press animation
     button.style.transform = 'scale(0.95)';
     setTimeout(() => {
         button.style.transform = '';
@@ -344,21 +301,19 @@ function sendSuggestion(button) {
     input.value = button.textContent;
     autoResize();
     
-    // Small delay before sending for better UX
     setTimeout(() => {
         sendCommand();
     }, 200);
 }
 
-// Quick action shortcuts with enhanced feedback
 function quickAction(type) {
     const input = document.getElementById('commandInput');
     const prompts = {
-        'contact': 'Create contact ',
-        'deal': 'Create opportunity for ',
-        'sms': 'Send SMS to ',
-        'search': 'Search for ',
-        'analytics': 'Show pipeline report'
+        'contact': 'add ',
+        'deal': 'new deal ',
+        'sms': 'text ',
+        'search': 'find ',
+        'analytics': 'hows my pipeline'
     };
     
     if (type === 'analytics') {
@@ -369,7 +324,6 @@ function quickAction(type) {
         input.focus();
         autoResize();
         
-        // Add subtle shake animation to indicate action
         input.style.animation = 'shake 0.3s';
         setTimeout(() => {
             input.style.animation = '';
@@ -377,40 +331,45 @@ function quickAction(type) {
     }
 }
 
-// Toggle sidebar with animation
+// ENHANCED Mobile Sidebar Toggle
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('active');
     
-    // Add overlay for mobile
+    // Enhanced mobile overlay
     if (window.innerWidth <= 768) {
         let overlay = document.querySelector('.sidebar-overlay');
+        
         if (sidebar.classList.contains('active')) {
+            // Create overlay if doesn't exist
             if (!overlay) {
                 overlay = document.createElement('div');
-                overlay.className = 'sidebar-overlay';
-                overlay.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.5);
-                    backdrop-filter: blur(4px);
-                    z-index: 999;
-                    animation: fadeIn 0.3s;
-                `;
+                overlay.className = 'sidebar-overlay active';
                 overlay.onclick = toggleSidebar;
                 document.body.appendChild(overlay);
+            } else {
+                overlay.classList.add('active');
             }
-        } else if (overlay) {
-            overlay.style.animation = 'fadeOut 0.3s';
-            setTimeout(() => overlay.remove(), 300);
+            
+            // Prevent body scroll when sidebar open
+            document.body.style.overflow = 'hidden';
+        } else {
+            // Remove overlay
+            if (overlay) {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    if (overlay && !sidebar.classList.contains('active')) {
+                        overlay.remove();
+                    }
+                }, 300);
+            }
+            
+            // Restore body scroll
+            document.body.style.overflow = '';
         }
     }
 }
 
-// Use example command with enhanced interaction
 function useExample(element) {
     const command = element.textContent.trim();
     const input = document.getElementById('commandInput');
@@ -423,7 +382,7 @@ function useExample(element) {
         height: 100%;
         top: 0;
         left: 0;
-        background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(46,92,154,0.4) 0%, transparent 70%);
         animation: ripple 0.6s ease-out;
         pointer-events: none;
     `;
@@ -442,7 +401,6 @@ function useExample(element) {
     }
 }
 
-// Smooth scroll to bottom
 function scrollToBottom() {
     const chatContainer = document.getElementById('chatContainer');
     chatContainer.scrollTo({
@@ -451,23 +409,17 @@ function scrollToBottom() {
     });
 }
 
-// Escape HTML to prevent XSS
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// Show notification (optional enhancement)
 function showNotification(message, type = 'info') {
-    // Could implement toast notifications here
     console.log(`[${type.toUpperCase()}] ${message}`);
 }
 
-// Play success sound (subtle, optional)
 function playSuccessSound() {
-    // Could add a subtle success sound effect
-    // For now, just a visual indication
     const statusIndicator = document.getElementById('statusIndicator');
     const originalBg = statusIndicator.style.background;
     statusIndicator.style.background = 'rgba(16, 185, 129, 0.2)';
@@ -476,7 +428,6 @@ function playSuccessSound() {
     }, 300);
 }
 
-// Handle mobile keyboard
 window.addEventListener('resize', function() {
     scrollToBottom();
 });
@@ -494,15 +445,13 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Add keyboard shortcuts
+// Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    // Cmd/Ctrl + K to focus input
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         document.getElementById('commandInput').focus();
     }
     
-    // Escape to close sidebar on mobile
     if (e.key === 'Escape') {
         const sidebar = document.getElementById('sidebar');
         if (sidebar.classList.contains('active')) {
