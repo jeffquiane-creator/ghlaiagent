@@ -20,71 +20,61 @@
                 <div class="example-category">
                     <h4>👤 Contacts</h4>
                     <div class="example-item" onclick="useExample(this)">
-                        Search for Mike
+                        find mike
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Create contact Sarah Jones email sarah@exp.com
+                        add sarah 555-1234
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Update John's phone to 555-1234
+                        johns phone is 555-9999
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Add note to Sarah: Very interested in eXp
+                        note on sarah: super interested
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Tag Mike as VIP Recruit
-                    </div>
-                </div>
-
-                <div class="example-category">
-                    <h4>💼 Opportunities</h4>
-                    <div class="example-item" onclick="useExample(this)">
-                        Create opportunity for Sarah worth $50000
-                    </div>
-                    <div class="example-item" onclick="useExample(this)">
-                        Move Mike to Send Live Invite
-                    </div>
-                    <div class="example-item" onclick="useExample(this)">
-                        Move Sarah to Verbally Committed
-                    </div>
-                    <div class="example-item" onclick="useExample(this)">
-                        Move John to Contract Signed
-                    </div>
-                    <div class="example-item" onclick="useExample(this)">
-                        Show all opportunities
+                        tag mike vip
                     </div>
                 </div>
 
                 <div class="example-category">
-                    <h4>💬 Communications</h4>
+                    <h4>💼 Pipeline Movement</h4>
                     <div class="example-item" onclick="useExample(this)">
-                        Send SMS to Sarah: Thanks for your interest!
+                        move sarah to send invite
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Tag John as Hot Lead
+                        john is committed
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        put mike in contract signed
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        sarah closed won
+                    </div>
+                    <div class="example-item" onclick="useExample(this)">
+                        new deal john 50k
                     </div>
                 </div>
 
                 <div class="example-category">
-                    <h4>⚡ Bulk Operations</h4>
+                    <h4>💬 Quick Actions</h4>
                     <div class="example-item" onclick="useExample(this)">
-                        Tag all California contacts as West Coast
+                        text sarah thanks for joining!
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Show contacts with tag Hot Lead
+                        tag everyone in california west coast
                     </div>
                 </div>
 
                 <div class="example-category">
-                    <h4>📊 Analytics</h4>
+                    <h4>📊 Check Status</h4>
                     <div class="example-item" onclick="useExample(this)">
-                        Show pipeline report
+                        hows my pipeline
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Show contact statistics
+                        show stats
                     </div>
                     <div class="example-item" onclick="useExample(this)">
-                        Get pipelines
+                        what stages do i have
                     </div>
                 </div>
             </div>
@@ -176,21 +166,21 @@
                             </div>
 
                             <div class="tips-box">
-                                <h3>💡 Pro Tips for eXp Recruiting:</h3>
+                                <h3>💡 Just Talk Naturally:</h3>
                                 <ul>
-                                    <li><strong>Move stages easily:</strong> "Move Sarah to Send Live Invite" or "Move John to Verbally Committed"</li>
-                                    <li><strong>Use natural language:</strong> Type commands like you'd speak them - I understand typos and casual speech!</li>
-                                    <li><strong>Bulk actions save time:</strong> "Tag all California contacts as West Coast"</li>
-                                    <li><strong>Get analytics fast:</strong> "Show pipeline report" for instant insights</li>
+                                    <li><strong>Short & simple:</strong> "find john", "text sarah", "hows my pipeline"</li>
+                                    <li><strong>Move deals fast:</strong> "sarah is committed" or "put mike in send invite"</li>
+                                    <li><strong>Typos are fine:</strong> "jhn", "comitted", "californai" - I get it!</li>
+                                    <li><strong>Be vague:</strong> "move him", "text her" - I'll figure it out from context</li>
                                 </ul>
                             </div>
 
                             <div class="get-started">
-                                <p><strong>Get started with these commands:</strong></p>
+                                <p><strong>Try these to start:</strong></p>
                                 <div class="starter-commands">
-                                    <button class="starter-btn" onclick="sendSuggestion(this)">Search for recruits</button>
-                                    <button class="starter-btn" onclick="sendSuggestion(this)">Show pipeline report</button>
-                                    <button class="starter-btn" onclick="sendSuggestion(this)">Get pipelines</button>
+                                    <button class="starter-btn" onclick="sendSuggestion(this)">hows my pipeline</button>
+                                    <button class="starter-btn" onclick="sendSuggestion(this)">show stats</button>
+                                    <button class="starter-btn" onclick="sendSuggestion(this)">what stages</button>
                                 </div>
                             </div>
                         </div>
@@ -203,7 +193,7 @@
                 <div class="input-wrapper">
                     <textarea 
                         id="commandInput" 
-                        placeholder="Type your command... 'Move Sarah to Send Live Invite', 'Create deal for Mike', 'Show analytics'"
+                        placeholder="Type like you talk... 'find john', 'sarah is committed', 'text mike thanks', 'hows my pipeline'"
                         rows="1"></textarea>
                     <button class="send-button" id="sendButton" onclick="sendCommand()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -212,11 +202,5 @@
                         </svg>
                     </button>
                 </div>
-                <p class="input-hint">Type naturally! I understand casual language and typos. 💬</p>
+                <p class="input-hint">Just type naturally - typos, abbreviations, however you'd text a friend 💬</p>
             </div>
-        </main>
-    </div>
-
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-</body>
-</html>
