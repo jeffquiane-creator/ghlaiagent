@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-GoHighLevel AI Agent - FULL FEATURED (V2 API)
-Complete CRM control with opportunities, calls, SMS, and more!
+GoHighLevel AI Agent - COMPLETE EDITION (V2 API)
+Full CRM control: Contacts, Opportunities, SMS, Email, Tasks, and MORE!
 """
 
 from flask import Flask, render_template, request, jsonify, session
@@ -18,8 +18,8 @@ app.secret_key = secrets.token_hex(32)
 CORS(app)
 
 # Configuration - V2 API
-GHL_API_KEY = os.environ.get("GHL_API_KEY", "pit-08e43a3b-311c-4eca-85ed-5aa15cf9c9ed")
-GHL_LOCATION_ID = os.environ.get("GHL_LOCATION_ID", "oRAdNjgqsxfmfcoNLmAG")
+GHL_API_KEY = os.environ.get("GHL_API_KEY")
+GHL_LOCATION_ID = os.environ.get("GHL_LOCATION_ID")
 GHL_BASE_URL = "https://services.leadconnectorhq.com"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
@@ -64,6 +64,12 @@ class GoHighLevelAPI:
         response = requests.put(url, headers=self.headers, json=data)
         return response.json()
     
+    def delete_contact(self, contact_id):
+        """Delete a contact"""
+        url = f"{self.base_url}/contacts/{contact_id}"
+        response = requests.delete(url, headers=self.headers)
+        return response.json()
+    
     def add_note_to_contact(self, contact_id, note):
         """Add a note to a contact"""
         url = f"{self.base_url}/contacts/{contact_id}/notes"
@@ -78,14 +84,19 @@ class GoHighLevelAPI:
         response = requests.put(url, headers=self.headers, json=payload)
         return response.json()
     
+    def remove_tag_from_contact(self, contact_id, tags):
+        """Remove tags from a contact"""
+        url = f"{self.base_url}/contacts/{contact_id}/tags"
+        payload = {"tags": tags if isinstance(tags, list) else [tags]}
+        response = requests.delete(url, headers=self.headers, json=payload)
+        return response.json()
+    
     # OPPORTUNITIES
     def create_opportunity(self, data):
         """Create an opportunity"""
         url = f"{self.base_url}/opportunities/"
         payload = {"locationId": self.location_id, **data}
-        print(f"Creating opportunity: {payload}")
         response = requests.post(url, headers=self.headers, json=payload)
-        print(f"Opportunity response: {response.status_code} - {response.text}")
         return response.json()
     
     def get_opportunities(self, contact_id=None, pipeline_id=None):
@@ -102,9 +113,7 @@ class GoHighLevelAPI:
     def update_opportunity(self, opportunity_id, data):
         """Update opportunity (move stages, update value, etc)"""
         url = f"{self.base_url}/opportunities/{opportunity_id}"
-        print(f"Updating opportunity {opportunity_id}: {data}")
         response = requests.put(url, headers=self.headers, json=data)
-        print(f"Update response: {response.status_code} - {response.text}")
         return response.json()
     
     def delete_opportunity(self, opportunity_id):
@@ -180,7 +189,7 @@ class GoHighLevelAPI:
 
 
 class GHLAIAgent:
-    """AI Agent with FULL CRM capabilities"""
+    """AI Agent with COMPLETE CRM capabilities"""
     
     def __init__(self, ghl_api):
         self.ghl = ghl_api
@@ -191,24 +200,27 @@ class GHLAIAgent:
         if not anthropic_client:
             return {"action": "error", "parameters": {}, "confirmation_message": "Anthropic API key not configured."}
         
-        system_prompt = """You are an AI assistant for GoHighLevel CRM with FULL capabilities.
+        system_prompt = """You are an AI assistant for GoHighLevel CRM with COMPLETE capabilities.
 
 Available actions:
-1. create_contact - Create a contact
-2. update_contact - Update contact details
-3. search_contact - Search for contacts
-4. add_note - Add note to contact
-5. add_tag - Add tags to contact
-6. create_opportunity - Create a new deal/opportunity
-7. update_opportunity - Update opportunity (change stage, value, status)
-8. move_opportunity - Move opportunity to different stage
-9. get_opportunities - List opportunities
-10. get_pipelines - List all pipelines and stages
-11. create_appointment - Schedule an appointment
-12. create_task - Create a task
-13. send_sms - Send SMS to contact
-14. send_email - Send email to contact
-15. add_to_campaign - Add contact to a campaign
+1. create_contact - Create a new contact
+2. update_contact - Update contact details (phone, email, address, etc)
+3. delete_contact - Delete a contact
+4. search_contact - Search for contacts
+5. add_note - Add note to contact
+6. add_tag - Add tags to contact
+7. remove_tag - Remove tags from contact
+8. create_opportunity - Create a new deal/opportunity
+9. update_opportunity - Update opportunity (change stage, value, status)
+10. move_opportunity - Move opportunity to different stage
+11. delete_opportunity - Delete an opportunity
+12. get_opportunities - List opportunities
+13. get_pipelines - List all pipelines and stages
+14. create_appointment - Schedule an appointment
+15. create_task - Create a task
+16. send_sms - Send SMS to contact
+17. send_email - Send email to contact
+18. add_to_campaign - Add contact to a campaign
 
 Return JSON:
 {
@@ -219,43 +231,74 @@ Return JSON:
 
 Examples:
 
-"Create opportunity for John Doe worth $50000 in Sales pipeline"
+"Update Paula's phone to 555-9999"
+{
+    "action": "update_contact",
+    "parameters": {
+        "contact_name": "Paula",
+        "phone": "555-9999"
+    },
+    "confirmation_message": "Updating Paula's phone number to 555-9999"
+}
+
+"Change John's email to john@newdomain.com"
+{
+    "action": "update_contact",
+    "parameters": {
+        "contact_name": "John",
+        "email": "john@newdomain.com"
+    },
+    "confirmation_message": "Updating John's email"
+}
+
+"Create opportunity for John Doe worth $50000"
 {
     "action": "create_opportunity",
     "parameters": {
         "contact_name": "John Doe",
         "name": "John Doe - $50000 Deal",
-        "monetaryValue": 50000,
-        "pipelineName": "Sales"
+        "monetaryValue": 50000
     },
-    "confirmation_message": "Creating $50000 opportunity for John Doe in Sales pipeline"
+    "confirmation_message": "Creating $50000 opportunity for John Doe"
 }
 
-"Move John's deal to Contract Signed"
+"Move Paula's deal to Closed Won"
 {
     "action": "move_opportunity",
     "parameters": {
-        "contact_name": "John Doe",
-        "stage_name": "Contract Signed"
+        "contact_name": "Paula",
+        "stage_name": "Closed Won"
     },
-    "confirmation_message": "Moving John Doe's opportunity to Contract Signed stage"
+    "confirmation_message": "Moving Paula's opportunity to Closed Won"
 }
 
-"Send SMS to John saying thanks for the meeting"
+"Send SMS to John saying thanks"
 {
     "action": "send_sms",
     "parameters": {
         "contact_name": "John",
-        "message": "Thanks for the meeting!"
+        "message": "Thanks!"
     },
     "confirmation_message": "Sending SMS to John"
 }
 
-"Show me all pipelines"
+"Delete contact John Doe"
 {
-    "action": "get_pipelines",
-    "parameters": {},
-    "confirmation_message": "Getting all pipelines and stages"
+    "action": "delete_contact",
+    "parameters": {
+        "contact_name": "John Doe"
+    },
+    "confirmation_message": "Deleting contact John Doe"
+}
+
+"Remove Hot Lead tag from Paula"
+{
+    "action": "remove_tag",
+    "parameters": {
+        "contact_name": "Paula",
+        "tags": ["Hot Lead"]
+    },
+    "confirmation_message": "Removing Hot Lead tag from Paula"
 }
 
 Return ONLY JSON."""
@@ -280,7 +323,7 @@ Return ONLY JSON."""
         params = command_data.get("parameters", {})
         
         try:
-            # CONTACTS
+            # CONTACTS - CREATE
             if action == "create_contact":
                 result = self.ghl.create_contact(params)
                 if result.get("contact"):
@@ -289,6 +332,49 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Created contact: {name}", "data": contact}
                 return {"success": False, "message": f"❌ Error: {result.get('message', 'Unknown')}"}
             
+            # CONTACTS - UPDATE
+            elif action == "update_contact":
+                contacts = self.ghl.search_contacts(params.get("contact_name"))
+                if contacts.get("contacts"):
+                    contact_id = contacts["contacts"][0]["id"]
+                    update_data = {}
+                    
+                    # Build update payload
+                    if params.get("phone"):
+                        update_data["phone"] = params["phone"]
+                    if params.get("email"):
+                        update_data["email"] = params["email"]
+                    if params.get("firstName"):
+                        update_data["firstName"] = params["firstName"]
+                    if params.get("lastName"):
+                        update_data["lastName"] = params["lastName"]
+                    if params.get("address"):
+                        update_data["address1"] = params["address"]
+                    if params.get("city"):
+                        update_data["city"] = params["city"]
+                    if params.get("state"):
+                        update_data["state"] = params["state"]
+                    if params.get("postalCode"):
+                        update_data["postalCode"] = params["postalCode"]
+                    if params.get("website"):
+                        update_data["website"] = params["website"]
+                    if params.get("companyName"):
+                        update_data["companyName"] = params["companyName"]
+                    
+                    result = self.ghl.update_contact(contact_id, update_data)
+                    return {"success": True, "message": f"✅ Updated {params.get('contact_name')}"}
+                return {"success": False, "message": f"❌ Contact not found"}
+            
+            # CONTACTS - DELETE
+            elif action == "delete_contact":
+                contacts = self.ghl.search_contacts(params.get("contact_name"))
+                if contacts.get("contacts"):
+                    contact_id = contacts["contacts"][0]["id"]
+                    result = self.ghl.delete_contact(contact_id)
+                    return {"success": True, "message": f"✅ Deleted {params.get('contact_name')}"}
+                return {"success": False, "message": f"❌ Contact not found"}
+            
+            # CONTACTS - SEARCH
             elif action == "search_contact":
                 result = self.ghl.search_contacts(params.get("query"))
                 contacts = result.get("contacts", [])
@@ -302,6 +388,7 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Found {len(contacts)} contact(s)", "data": contact_list}
                 return {"success": False, "message": f"❌ No contacts found"}
             
+            # CONTACTS - ADD NOTE
             elif action == "add_note":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
@@ -310,6 +397,7 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Added note to {params.get('contact_name')}"}
                 return {"success": False, "message": f"❌ Contact not found"}
             
+            # CONTACTS - ADD TAG
             elif action == "add_tag":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
@@ -318,27 +406,31 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Added tags to {params.get('contact_name')}"}
                 return {"success": False, "message": f"❌ Contact not found"}
             
-            # OPPORTUNITIES
+            # CONTACTS - REMOVE TAG
+            elif action == "remove_tag":
+                contacts = self.ghl.search_contacts(params.get("contact_name"))
+                if contacts.get("contacts"):
+                    contact_id = contacts["contacts"][0]["id"]
+                    self.ghl.remove_tag_from_contact(contact_id, params["tags"])
+                    return {"success": True, "message": f"✅ Removed tags from {params.get('contact_name')}"}
+                return {"success": False, "message": f"❌ Contact not found"}
+            
+            # OPPORTUNITIES - CREATE
             elif action == "create_opportunity":
-                # First find the contact
                 contacts = self.ghl.search_contacts(params.get("contact_name", ""))
                 if not contacts.get("contacts"):
                     return {"success": False, "message": f"❌ Contact not found: {params.get('contact_name')}"}
                 
                 contact_id = contacts["contacts"][0]["id"]
-                
-                # Get pipelines to find the right one
                 pipelines = self.ghl.get_pipelines()
                 pipeline = None
                 stage_id = None
                 
                 if pipelines.get("pipelines"):
-                    # Find pipeline by name or use first one
                     pipeline_name = params.get("pipelineName", "").lower()
                     for p in pipelines["pipelines"]:
                         if pipeline_name in p.get("name", "").lower() or not pipeline_name:
                             pipeline = p
-                            # Use first stage
                             if p.get("stages"):
                                 stage_id = p["stages"][0]["id"]
                             break
@@ -360,8 +452,8 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Created opportunity: {opp_data['name']}"}
                 return {"success": False, "message": f"❌ Error creating opportunity: {result.get('message')}"}
             
+            # OPPORTUNITIES - MOVE/UPDATE
             elif action == "move_opportunity" or action == "update_opportunity":
-                # Find contact's opportunity
                 contacts = self.ghl.search_contacts(params.get("contact_name", ""))
                 if not contacts.get("contacts"):
                     return {"success": False, "message": "❌ Contact not found"}
@@ -374,9 +466,8 @@ Return ONLY JSON."""
                 
                 opp = opps["opportunities"][0]
                 opp_id = opp["id"]
-                
-                # If moving to a stage, find the stage ID
                 update_data = {}
+                
                 if params.get("stage_name"):
                     pipelines = self.ghl.get_pipelines()
                     for pipeline in pipelines.get("pipelines", []):
@@ -393,6 +484,23 @@ Return ONLY JSON."""
                 result = self.ghl.update_opportunity(opp_id, update_data)
                 return {"success": True, "message": f"✅ Updated opportunity"}
             
+            # OPPORTUNITIES - DELETE
+            elif action == "delete_opportunity":
+                contacts = self.ghl.search_contacts(params.get("contact_name", ""))
+                if not contacts.get("contacts"):
+                    return {"success": False, "message": "❌ Contact not found"}
+                
+                contact_id = contacts["contacts"][0]["id"]
+                opps = self.ghl.get_opportunities(contact_id=contact_id)
+                
+                if not opps.get("opportunities"):
+                    return {"success": False, "message": "❌ No opportunities found"}
+                
+                opp_id = opps["opportunities"][0]["id"]
+                result = self.ghl.delete_opportunity(opp_id)
+                return {"success": True, "message": f"✅ Deleted opportunity"}
+            
+            # OPPORTUNITIES - GET PIPELINES
             elif action == "get_pipelines":
                 result = self.ghl.get_pipelines()
                 if result.get("pipelines"):
@@ -406,6 +514,7 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Found {len(pipeline_info)} pipeline(s)", "data": pipeline_info}
                 return {"success": False, "message": "❌ No pipelines found"}
             
+            # OPPORTUNITIES - GET LIST
             elif action == "get_opportunities":
                 contact_name = params.get("contact_name")
                 if contact_name:
@@ -421,7 +530,7 @@ Return ONLY JSON."""
                 opps = result.get("opportunities", [])
                 return {"success": True, "message": f"✅ Found {len(opps)} opportunities", "data": opps[:10]}
             
-            # COMMUNICATIONS
+            # COMMUNICATIONS - SMS
             elif action == "send_sms":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
@@ -430,6 +539,7 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ SMS sent to {params.get('contact_name')}"}
                 return {"success": False, "message": "❌ Contact not found"}
             
+            # COMMUNICATIONS - EMAIL
             elif action == "send_email":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
@@ -438,7 +548,7 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Email sent to {params.get('contact_name')}"}
                 return {"success": False, "message": "❌ Contact not found"}
             
-            # TASKS & APPOINTMENTS
+            # TASKS
             elif action == "create_task":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
                 if contacts.get("contacts"):
@@ -448,10 +558,21 @@ Return ONLY JSON."""
                     return {"success": True, "message": f"✅ Task created"}
                 return {"success": False, "message": "❌ Contact not found"}
             
+            # APPOINTMENTS
             elif action == "create_appointment":
                 result = self.ghl.create_appointment(params)
                 return {"success": True, "message": "✅ Appointment created"}
             
+            # CAMPAIGNS
+            elif action == "add_to_campaign":
+                contacts = self.ghl.search_contacts(params.get("contact_name"))
+                if contacts.get("contacts"):
+                    contact_id = contacts["contacts"][0]["id"]
+                    result = self.ghl.add_to_campaign(contact_id, params.get("campaign_id"))
+                    return {"success": True, "message": f"✅ Added to campaign"}
+                return {"success": False, "message": "❌ Contact not found"}
+            
+            # ERROR
             elif action == "error":
                 return {"success": False, "message": command_data.get('confirmation_message')}
             
@@ -498,7 +619,7 @@ def test_api():
         contacts = ghl_api.search_contacts("")
         return jsonify({
             "success": True,
-            "message": "✅ Connected to GoHighLevel V2",
+            "message": "✅ Connected to GoHighLevel V2 - COMPLETE EDITION",
             "contact_count": len(contacts.get("contacts", []))
         })
     except Exception as e:
@@ -507,9 +628,41 @@ def test_api():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("🚀 GoHighLevel AI Agent - FULL FEATURED")
+    print("🚀 GoHighLevel AI Agent - COMPLETE EDITION")
     print("=" * 60)
-    print("\n📱 V2 API | Opportunities | SMS | Email | Tasks")
+    print("\n✅ Full CRUD on Contacts")
+    print("✅ Complete Opportunity Management")
+    print("✅ SMS & Email Communications")
+    print("✅ Tasks & Appointments")
+    print("✅ Pipeline Management")
+    print("✅ Campaign Integration\n")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+```
+
+---
+
+## ✅ Commit This!
+
+Commit message: `Complete app.py with ALL features including update_contact`
+
+---
+
+## 🎯 Now Try These Commands:
+```
+Update Paula Minto's phone to 555-9999
+
+Change Paula's email to paula@newdomain.com
+
+Delete contact Test User
+
+Remove Hot Lead tag from Paula
+
+Show me all pipelines
+
+Create opportunity for Paula worth $100000
+
+Move Paula's deal to Closed Won
+
+Send SMS to Paula saying "Thanks for your business!"
