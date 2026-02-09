@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-GoHighLevel AI Agent - Ultimate Edition
-Complete working version with all features
+eXcelerate CRM AI Agent by Jay Kinder
+Complete AI-powered CRM control for eXp Realty
 """
 
 from flask import Flask, render_template, request, jsonify, session
@@ -133,6 +133,52 @@ class GoHighLevelAPI:
         response = requests.get(url, headers=self.headers, params=params)
         return response.json()
     
+    def find_stage_by_name(self, stage_name):
+        """Find a stage ID by name (fuzzy matching for eXp Realty stages)"""
+        pipelines = self.get_pipelines()
+        
+        # Normalize search term
+        search_term = stage_name.lower().strip()
+        
+        for pipeline in pipelines.get("pipelines", []):
+            for stage in pipeline.get("stages", []):
+                stage_name_lower = stage["name"].lower()
+                
+                # Exact match
+                if search_term == stage_name_lower:
+                    return {
+                        "stage_id": stage["id"],
+                        "stage_name": stage["name"],
+                        "pipeline_id": pipeline["id"],
+                        "pipeline_name": pipeline["name"]
+                    }
+                
+                # Partial match (e.g., "verbally" matches "Verbally Committed")
+                if search_term in stage_name_lower or stage_name_lower in search_term:
+                    return {
+                        "stage_id": stage["id"],
+                        "stage_name": stage["name"],
+                        "pipeline_id": pipeline["id"],
+                        "pipeline_name": pipeline["name"]
+                    }
+        
+        return None
+    
+    def move_opportunity_to_stage(self, opportunity_id, stage_name):
+        """Move an opportunity to a stage by name"""
+        stage_info = self.find_stage_by_name(stage_name)
+        
+        if not stage_info:
+            return {"error": f"Stage '{stage_name}' not found in any pipeline"}
+        
+        update_data = {
+            "pipelineStageId": stage_info["stage_id"]
+        }
+        
+        result = self.update_opportunity(opportunity_id, update_data)
+        result["stage_info"] = stage_info
+        return result
+    
     def send_sms(self, contact_id, message):
         """Send SMS to a contact"""
         url = f"{self.base_url}/conversations/messages"
@@ -186,10 +232,10 @@ class GHLAIAgent:
             return {
                 "action": "error",
                 "parameters": {},
-                "confirmation_message": "Anthropic API key not configured."
+                "confirmation_message": "AI service not configured."
             }
         
-        system_prompt = """You are an AI assistant for GoHighLevel CRM. Interpret user commands and return ONLY valid JSON.
+        system_prompt = """You are an AI assistant for eXcelerate CRM by Jay Kinder. This is an eXp Realty focused CRM system. Interpret user commands and return ONLY valid JSON.
 
 CRITICAL: Return ONLY the JSON object. No markdown, no code blocks, no explanations.
 
@@ -200,8 +246,9 @@ Available actions:
 - add_note: Add note to contact
 - add_tag: Add tag to contact
 - remove_tag: Remove tag from contact
-- create_opportunity: Create opportunity/deal
+- create_opportunity: Create opportunity/deal for eXp Realty recruiting
 - update_opportunity: Update opportunity
+- move_opportunity: Move opportunity to pipeline stage (e.g., "Send Live Invite", "Verbally Committed", "Contract Signed")
 - get_opportunities: List opportunities
 - delete_opportunity: Delete opportunity
 - get_pipelines: Get pipeline info
@@ -236,6 +283,20 @@ User: "Update Paula's phone to 555-9999"
     "action": "update_contact",
     "parameters": {"contact_name": "Paula", "phone": "555-9999"},
     "confirmation_message": "Updating Paula's phone number"
+}
+
+User: "Move John to Send Live Invite"
+{
+    "action": "move_opportunity",
+    "parameters": {"contact_name": "John", "stage_name": "Send Live Invite"},
+    "confirmation_message": "Moving John's opportunity to Send Live Invite stage"
+}
+
+User: "Move Sarah to verbally committed"
+{
+    "action": "move_opportunity",
+    "parameters": {"contact_name": "Sarah", "stage_name": "Verbally Committed"},
+    "confirmation_message": "Moving Sarah's deal to Verbally Committed"
 }
 
 User: "Create deal for John worth $50000"
@@ -463,6 +524,40 @@ REMEMBER: Return ONLY JSON, nothing else. No markdown formatting."""
                     "data": opp_list
                 }
             
+            # Move opportunity to stage
+            elif action == "move_opportunity":
+                contact_name = params.get("contact_name")
+                stage_name = params.get("stage_name")
+                
+                # Find contact first
+                contacts = self.ghl.search_contacts(contact_name)
+                if not contacts.get("contacts"):
+                    return {"success": False, "message": f"❌ Contact '{contact_name}' not found"}
+                
+                contact_id = contacts["contacts"][0]["id"]
+                
+                # Get their opportunities
+                opps = self.ghl.get_opportunities(contact_id=contact_id)
+                opportunities = opps.get("opportunities", [])
+                
+                if not opportunities:
+                    return {"success": False, "message": f"❌ No opportunities found for {contact_name}"}
+                
+                # Get the most recent opportunity (or first one)
+                opportunity_id = opportunities[0]["id"]
+                
+                # Move to the stage
+                result = self.ghl.move_opportunity_to_stage(opportunity_id, stage_name)
+                
+                if result.get("error"):
+                    return {"success": False, "message": f"❌ {result['error']}"}
+                
+                stage_info = result.get("stage_info", {})
+                return {
+                    "success": True,
+                    "message": f"✅ Moved {contact_name}'s opportunity to '{stage_info.get('stage_name')}' in {stage_info.get('pipeline_name')} pipeline"
+                }
+            
             # Send SMS
             elif action == "send_sms":
                 contacts = self.ghl.search_contacts(params.get("contact_name"))
@@ -613,7 +708,7 @@ def test_api():
         contacts = ghl_api.search_contacts("", limit=10)
         return jsonify({
             "success": True,
-            "message": "✅ Connected to GoHighLevel - Ultimate Edition",
+            "message": "✅ Connected - eXcelerate CRM by Jay Kinder",
             "contact_count": len(contacts.get("contacts", []))
         })
     except Exception as e:
@@ -625,7 +720,7 @@ def test_api():
 
 @app.route('/api/examples', methods=['GET'])
 def get_examples():
-    """Get example commands"""
+    """Get example commands for eXp Realty recruiting"""
     examples = {
         "contacts": [
             "Search for jeff",
@@ -635,12 +730,15 @@ def get_examples():
         ],
         "opportunities": [
             "Create opportunity for John worth $50000",
+            "Move John to Send Live Invite",
+            "Move Sarah to Verbally Committed",
+            "Move Mike's deal to Contract Signed",
             "Show all opportunities",
             "Get pipeline report"
         ],
         "communications": [
             "Send SMS to Mike: Meeting at 3pm today",
-            "Tag Paula as VIP Client"
+            "Tag Paula as VIP Recruit"
         ],
         "bulk": [
             "Tag all California contacts as West Coast",
