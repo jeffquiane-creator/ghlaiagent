@@ -307,8 +307,18 @@ Return ONLY valid JSON."""
                 messages=[{"role": "user", "content": user_command}]
             )
             
-            response_text = message.content[0].text
-            return json.loads(response_text)
+response_text = message.content[0].text.strip()
+# Remove markdown formatting
+if '```' in response_text:
+    response_text = response_text.split('```')[1]
+    if response_text.startswith('json'):
+        response_text = response_text[4:]
+response_text = response_text.strip()
+
+try:
+    return json.loads(response_text)
+except:
+    return {"action": "error", "parameters": {}, "confirmation_message": "Please try again"}
         except Exception as e:
             print(f"AI Error: {str(e)}")
             return {"action": "error", "parameters": {}, "confirmation_message": f"Error: {str(e)}"}
