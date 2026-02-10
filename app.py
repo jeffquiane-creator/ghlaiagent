@@ -166,9 +166,9 @@ class GoHighLevelAPI:
     def get_opportunities(self, contact_id=None, limit=500):
         """Get opportunities"""
         url = f"{self.base_url}/opportunities/search"
-        params = {"location_id": self.location_id, "limit": limit}
+        params = {"locationId": self.location_id, "limit": limit}
         if contact_id:
-            params["contact_id"] = contact_id
+            params["contactId"] = contact_id
         response = requests.get(url, headers=self.headers, params=params)
         return response.json()
     
@@ -545,6 +545,14 @@ EXAMPLES:
     "action": "create_appointment",
     "parameters": {{"contact_name": "sarah", "date": "tuesday", "time": "2pm"}},
     "confirmation_message": "Scheduling discovery call with Sarah",
+    "needs_clarification": false
+}}
+
+"show stages" OR "what stages" OR "show pipelines"
+{{
+    "action": "show_stages",
+    "parameters": {{}},
+    "confirmation_message": "Showing all pipeline stages",
     "needs_clarification": false
 }}
 
