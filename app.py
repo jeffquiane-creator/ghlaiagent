@@ -402,7 +402,7 @@ COMMANDS YOU UNDERSTAND:
 - "who's committed" → search stage "Verbally Committed"
 - "how many in discovery" → count opps in "Discovery Call Scheduled"
 - "summary of jeff" → get full contact history
-- "hows my pipeline" → count opportunities per stage
+- "hows my pipeline" → pipeline_overview (shows opportunity counts per stage)
 - "who registered this week" → time-filtered stage search
 - "jeff's timeline" → person's journey with dates
 - "show hot leads" → smart filtered list
@@ -460,6 +460,30 @@ NEW ACTION TYPES:
 
 EXAMPLES:
 
+"send jeff the live call invite"
+{{
+    "action": "move_to_stage",
+    "parameters": {{"contact_name": "jeff", "stage": "send live call invite"}},
+    "confirmation_message": "Moving Jeff to Send Live Call Invite",
+    "needs_clarification": false
+}}
+
+"send the live call invite to jeff quiane"
+{{
+    "action": "move_to_stage",
+    "parameters": {{"contact_name": "jeff quiane", "stage": "send live call invite"}},
+    "confirmation_message": "Moving Jeff Quiane to Send Live Call Invite",
+    "needs_clarification": false
+}}
+
+"send jeff partner webinar invite"
+{{
+    "action": "move_to_stage",
+    "parameters": {{"contact_name": "jeff", "stage": "send invite"}},
+    "confirmation_message": "Moving Jeff to Send Invite (partner webinar)",
+    "needs_clarification": false
+}}
+
 "who registered this week"
 {{
     "action": "search_by_stage_and_time",
@@ -490,6 +514,22 @@ EXAMPLES:
     "parameters": {{"from_stage": "registered", "to_stage": "watched webinar"}},
     "confirmation_message": "Preparing to bulk move from Registered to Watched Webinar",
     "needs_clarification": true
+}}
+
+"hows my pipeline" OR "pipeline overview" OR "show my pipeline" OR "pipeline report" OR "how many people in pipeline"
+{{
+    "action": "pipeline_overview",
+    "parameters": {{}},
+    "confirmation_message": "Getting pipeline overview with opportunity counts",
+    "needs_clarification": false
+}}
+
+"how many people are in the exp realty pipeline" OR "total people in pipeline"
+{{
+    "action": "pipeline_overview",
+    "parameters": {{}},
+    "confirmation_message": "Counting all opportunities in eXp Realty pipeline",
+    "needs_clarification": false
 }}
 
 REMEMBER: Return ONLY JSON, nothing else."""
@@ -700,8 +740,8 @@ REMEMBER: Return ONLY JSON, nothing else."""
                     "message": f"✅ {stage_count} opportunities in '{stage_info['stage_name']}'"
                 }
             
-            # Pipeline overview
-            elif action == "pipeline_overview":
+            # Pipeline overview (also handles pipeline_report and get_pipeline_summary)
+            elif action == "pipeline_overview" or action == "pipeline_report" or action == "get_pipeline_summary":
                 pipelines = self.ghl.get_pipelines()
                 all_opps = self.ghl.get_opportunities(limit=500)
                 
