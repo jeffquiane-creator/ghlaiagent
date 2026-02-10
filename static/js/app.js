@@ -236,19 +236,33 @@ function addBotResponse(data) {
 
 // Render data item with appropriate formatting
 function renderDataItem(item, index) {
-    // Check if it's contact data
+    // Check if it's contact data (with potential timeline info)
     if (item.name || item.email || item.phone) {
         return `
-            <div class="data-label">Contact ${index + 1}</div>
+            <div class="data-label">${item.name ? 'Contact' : 'Agent'} ${index + 1}</div>
             <div class="data-value"><strong>${escapeHtml(item.name || 'No name')}</strong></div>
+            ${item.stage ? `<div class="data-value">📍 Stage: ${escapeHtml(item.stage)}</div>` : ''}
+            ${item.days_in_stage ? `<div class="data-value">⏱️ Time in stage: ${escapeHtml(item.days_in_stage)}</div>` : ''}
+            ${item.current_stage ? `<div class="data-value">📍 ${escapeHtml(item.current_stage)}</div>` : ''}
+            ${item.last_contact ? `<div class="data-value">📞 Last contact: ${escapeHtml(item.last_contact)}</div>` : ''}
+            ${item.status ? `<div class="data-value">${escapeHtml(item.status)}</div>` : ''}
             <div class="data-value">📧 ${escapeHtml(item.email || 'No email')}</div>
             <div class="data-value">📱 ${escapeHtml(item.phone || 'No phone')}</div>
             ${item.deal_value ? `<div class="data-value">💰 ${escapeHtml(item.deal_value)}</div>` : ''}
+            ${item.total_notes ? `<div class="data-value">📝 ${item.total_notes} notes</div>` : ''}
             ${item.tags && item.tags.length > 0 ? `
                 <div class="tags">
                     ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
                 </div>
             ` : ''}
+        `;
+    }
+    
+    // Pipeline stage counts
+    if (item.stage && item.count !== undefined) {
+        return `
+            <div class="data-label">${escapeHtml(item.stage)}</div>
+            <div class="data-value"><strong>${item.count} opportunities</strong></div>
         `;
     }
     
