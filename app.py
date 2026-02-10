@@ -1170,6 +1170,29 @@ REMEMBER: Return ONLY JSON, nothing else."""
                     }]
                 }
             
+            # Get pipelines / show stages
+            elif action == "get_pipelines" or action == "show_stages":
+                result = self.ghl.get_pipelines()
+                if result.get("pipelines"):
+                    pipeline_data = []
+                    for p in result["pipelines"]:
+                        stages = p.get("stages", [])
+                        stage_names = [s["name"] for s in stages]
+                        
+                        # Create a clear display for each pipeline
+                        pipeline_data.append({
+                            "pipeline": p["name"],
+                            "total_stages": len(stages),
+                            "stages": " → ".join(stage_names)
+                        })
+                    
+                    return {
+                        "success": True,
+                        "message": f"✅ Found {len(result['pipelines'])} pipeline(s) with stages",
+                        "data": pipeline_data
+                    }
+                return {"success": False, "message": "❌ No pipelines found"}
+            
             # Error
             elif action == "error":
                 return {
