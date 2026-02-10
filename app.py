@@ -532,6 +532,22 @@ EXAMPLES:
     "needs_clarification": false
 }}
 
+"book appt with jeff friday at 3pm" OR "set appointment jeff friday 3"
+{{
+    "action": "create_appointment",
+    "parameters": {{"contact_name": "jeff", "date": "friday", "time": "3pm"}},
+    "confirmation_message": "Scheduling appointment with Jeff for Friday at 3pm",
+    "needs_clarification": false
+}}
+
+"schedule discovery call with sarah tuesday 2pm"
+{{
+    "action": "create_appointment",
+    "parameters": {{"contact_name": "sarah", "date": "tuesday", "time": "2pm"}},
+    "confirmation_message": "Scheduling discovery call with Sarah",
+    "needs_clarification": false
+}}
+
 REMEMBER: Return ONLY JSON, nothing else."""
 
         try:
@@ -1123,6 +1139,35 @@ REMEMBER: Return ONLY JSON, nothing else."""
                 return {
                     "success": True,
                     "message": f"✅ Moved {moved_count} agents from '{bulk_data['from_stage_name']}' to '{bulk_data['to_stage_name']}'"
+                }
+            
+            # Create appointment
+            elif action == "create_appointment":
+                contact_name = params.get("contact_name")
+                date_str = params.get("date", "")
+                time_str = params.get("time", "")
+                
+                # Find the contact
+                contacts = self.ghl.search_contacts(contact_name)
+                if not contacts.get("contacts"):
+                    return {"success": False, "message": f"❌ Contact '{contact_name}' not found"}
+                
+                contact = contacts["contacts"][0]
+                contact_id = contact["id"]
+                contact_full_name = f"{contact.get('firstName', '')} {contact.get('lastName', '')}".strip()
+                
+                # For now, add as a note (full calendar integration requires calendar ID)
+                note_text = f"📅 Appointment scheduled: {date_str} at {time_str}"
+                self.ghl.add_note_to_contact(contact_id, note_text)
+                
+                return {
+                    "success": True,
+                    "message": f"✅ Appointment note added for {contact_full_name}",
+                    "data": [{
+                        "contact": contact_full_name,
+                        "appointment": f"{date_str} at {time_str}",
+                        "note": "Added to contact notes (full calendar sync requires GHL calendar setup)"
+                    }]
                 }
             
             # Error
